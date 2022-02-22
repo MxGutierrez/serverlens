@@ -2,6 +2,8 @@
 
 const dynamodb = require('aws-sdk/clients/dynamodb');
 
+const tableName = process.env.TABLE_NAME;
+
 // Create a DocumentClient that represents the query to add an item
 const docClient = new dynamodb.DocumentClient({
     endpoint: process.env.AWS_SAM_LOCAL
@@ -19,7 +21,7 @@ exports.getAllItemsHandler = async (event) => {
     // All log statements are written to CloudWatch
     console.info('received:', event);
 
-    const data = await docClient.scan({ TableName: 'Users' }).promise();
+    const data = await docClient.scan({ TableName: tableName}).promise();
     const items = data.Items;
 
     const response = {

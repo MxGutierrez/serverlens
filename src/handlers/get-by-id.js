@@ -3,6 +3,8 @@
 // Create a DocumentClient that represents the query to add an item
 const dynamodb = require('aws-sdk/clients/dynamodb');
 
+const tableName = process.env.TABLE_NAME;
+
 const docClient = new dynamodb.DocumentClient({
     endpoint: process.env.AWS_SAM_LOCAL
         ? 'http://dynamodb:8000'
@@ -25,7 +27,7 @@ exports.getByIdHandler = async (event) => {
   // Get the item from the table
   // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#get-property
   var params = {
-    TableName: 'Users',
+    TableName: tableName,
     Key: { id: id },
   };
   const data = await docClient.get(params).promise();

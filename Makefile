@@ -14,3 +14,6 @@ local-db:
 
 local-put-test-event:
 	sam local invoke --event events/event-post-item.json putItemFunction --docker-network serverless
+
+deploy-frontend:
+	aws s3 sync frontend/dist/ s3://serverless-app-frontend --delete

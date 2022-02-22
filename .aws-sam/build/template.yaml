@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: sam-app
+Transform:
+- AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    Architectures:
+    - x86_64
+    MemorySize: 128
+    Timeout: 100
+Resources:
+  AppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: serverless-app-frontend
+      WebsiteConfiguration:
+        IndexDocument: index.html
+  AppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: AppBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Action:
+          - s3:GetObject
+          Effect: Allow
+          Principal: '*'
+          Resource:
+            Fn::Join:
+            - ''
+            - - Fn::GetAtt:
+                - AppBucket
+                - Arn
+              - /*
+Outputs:
+  WebsiteUrl:
+    Value:
+      Fn::GetAtt:
+      - AppBucket
+      - WebsiteURL

@@ -3,6 +3,8 @@
 // Create a DocumentClient that represents the query to add an item
 const dynamodb = require('aws-sdk/clients/dynamodb');
 
+const tableName = process.env.TABLE_NAME;
+
 const docClient = new dynamodb.DocumentClient({
     endpoint: process.env.AWS_SAM_LOCAL
         ? 'http://dynamodb:8000'
@@ -27,7 +29,7 @@ exports.putItemHandler = async (event) => {
     // Creates a new item, or replaces an old item with a new item
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property
     var params = {
-        TableName: 'Users',
+        TableName: tableName,
         Item: { id : id, name: name }
     };
 
