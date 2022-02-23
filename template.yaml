@@ -29,6 +29,7 @@ Resources:
       Name: sam-app
       StageName: prod
       Auth:
+        DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn: !GetAtt UserPool.Arn
@@ -56,6 +57,7 @@ Resources:
             RestApiId: !Ref Api
             Path: /
             Method: GET
+
   # Each Lambda function is defined by properties:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
 
