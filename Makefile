@@ -1,6 +1,6 @@
 dev:
 	docker-compose up -d
-	sam local start-api --docker-network serverless
+	sam local start-api --docker-network serverless --env-vars ./env.json
 
 local-db:
 	aws dynamodb create-table \
