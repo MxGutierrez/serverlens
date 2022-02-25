@@ -16,4 +16,5 @@ local-put-test-event:
 	sam local invoke --event events/event-post-item.json putItemFunction --docker-network serverless
 
 deploy-frontend:
+	(cd frontend && npm run build) # make build package without moving into frontend directory
 	aws s3 sync frontend/dist/ s3://serverless-app-frontend --delete
