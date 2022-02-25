@@ -1,0 +1,187 @@
+# This is the SAM template that represents the architecture of your serverless application
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+
+# The AWSTemplateFormatVersion identifies the capabilities of the template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  sam-app
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+  - AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    Architectures:
+      - x86_64
+    MemorySize: 128
+    Timeout: 100
+
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowMethods:
+          - "'*'"
+        AllowHeaders:
+          - "'*'"
+        AllowOrigins:
+          - "'*'"
+      StageName: prod
+      Auth:
+        DefaultAuthorizer: OAuth2Authorizer
+        Authorizers:
+          OAuth2Authorizer:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              issuer: "https://cognito-idp.${AWS::REGION}.amazonaws.com/${UserPool}"
+              audience:
+                - !Ref CognitoUserPoolClient
+      # AllowOrigin: !GetAtt AppBucket.WebsiteURL
+
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: get-all-items.js
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-all-items.getAllItemsHandler
+      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UsersTable
+      Events:
+        HttpApiEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /
+            Method: GET
+
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: get-by-id.js
+  # getByIdFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     Handler: src/handlers/get-by-id.getByIdHandler
+  #     Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
+  #     Policies:
+  #       # Give Create/Read/Update/Delete Permissions to the UsersTable
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref UsersTable
+  #     Environment:
+  #       Variables:
+  #         TABLE_NAME: !Ref UsersTable
+  #     Events:
+  #       Api:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref Api
+  #           Path: /{id}
+  #           Method: GET
+
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: put-item.js
+  # putItemFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     Handler: src/handlers/put-item.putItemHandler
+  #     Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
+  #     Policies:
+  #       # Give Create/Read/Update/Delete Permissions to the UsersTable
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref UsersTable
+  #     Environment:
+  #       Variables:
+  #         TABLE_NAME: !Ref UsersTable
+  #     Events:
+  #       Api:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref Api
+  #           Path: /
+  #           Method: POST
+  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
+
+  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
+  UsersTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: Users
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: sam-user-pool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      UsernameAttributes: # attributes that can be used instead of the username
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: false
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: sam-user-pool-client
+      GenerateSecret: false
+
+  AppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: serverless-app-frontend
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  AppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AppBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Action:
+            - "s3:GetObject"
+          Effect: Allow
+          Principal: "*"
+          Resource: !Join
+            - ""
+            - - !GetAtt AppBucket.Arn
+              - /*
+
+Outputs:
+  WebsiteUrl:
+    Value: !GetAtt AppBucket.WebsiteURL
+  WebEndpoint:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  UserPoolID:
+    Value: !Ref UserPool
+  UserPoolClientID:
+    Value: !Ref CognitoUserPoolClient
