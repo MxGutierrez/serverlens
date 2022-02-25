@@ -29,10 +29,16 @@ Resources:
       Name: sam-app
       StageName: prod
       Auth:
+        AddDefaultAuthorizerToCorsPreflight: False # Otherwise OPTIONS preflight request will also require Authorization token but browsers do not include headers on pre flight requests
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn: !GetAtt UserPool.Arn
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+        # AllowOrigin: !GetAtt AppBucket.WebsiteURL
 
   # Each Lambda function is defined by properties:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -169,7 +175,7 @@ Outputs:
     Value: !GetAtt AppBucket.WebsiteURL
   WebEndpoint:
     Description: "API Gateway endpoint URL for Prod stage"
-    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod/"
   UserPoolID:
     Value: !Ref UserPool
   UserPoolClientID:
