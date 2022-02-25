@@ -1,24 +1,27 @@
 <template>
   <img alt="Vue logo" src="./assets/logo.png" />
+
   <Authify
-    v-if="cognitoSession === null"
-    v-slot="{ signUp, login }"
+    v-slot="{ signUp, login, logout }"
     :username="username"
     :password="password"
     @success="handleSuccess"
+    @logout-success="cognitoSession = null"
     @error="handleError"
   >
-    <label for="username">Email</label>
-    <input v-model="username" id="username" />
+    <template v-if="cognitoSession === null">
+      <label for="username">Email</label>
+      <input v-model="username" id="username" />
 
-    <label for="password">Password</label>
-    <input v-model="password" type="password" id="password" />
+      <label for="password">Password</label>
+      <input v-model="password" type="password" id="password" />
 
-    <button @click="signUp">Signup</button>
-    <button @click="login">Login</button>
+      <button @click="signUp">Signup</button>
+      <button @click="login">Login</button>
+    </template>
+
+    <button v-else @click="logout">Logout</button>
   </Authify>
-
-  <button v-else @click="cognitoSession = null">Logout</button>
 
   <button @click="request">Request</button>
   <p>Response: {{ response }}</p>
@@ -47,10 +50,6 @@ export default {
       this.cognitoSession = result;
       this.username = "";
       this.password = "";
-
-      // console.log(this.cognitoSession.idToken.jwtToken);
-      axios.defaults.headers.common["Authorization"] =
-        this.cognitoSession.idToken.jwtToken;
     },
     handleError(error) {
       console.log(error);

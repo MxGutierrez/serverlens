@@ -1,5 +1,5 @@
 <template>
-  <slot :sign-up="signUp" :login="login"></slot>
+  <slot :sign-up="signUp" :login="login" :logout="logout"></slot>
 </template>
 
 <script>
@@ -8,6 +8,8 @@ import {
   CognitoUser,
   AuthenticationDetails,
 } from "amazon-cognito-identity-js";
+
+import axios from "axios";
 
 const userPool = new CognitoUserPool({
   UserPoolId: process.env.VUE_APP_USER_POOL_ID,
@@ -25,7 +27,7 @@ export default {
       required: true,
     },
   },
-  emits: ["success", "error"],
+  emits: ["success", "error", "logout-success"],
   methods: {
     signUp() {
       userPool.signUp(this.username, this.password, [], null, (err, result) => {
@@ -46,11 +48,18 @@ export default {
       cognitoUser.authenticateUser(authDetails, {
         onSuccess: (result) => {
           this.$emit("success", result);
+
+          axios.defaults.headers.common["Authorization"] =
+            result.idToken.jwtToken;
         },
         onFailure: (err) => {
           this.$emit("error", err);
         },
       });
+    },
+    logout() {
+      delete axios.defaults.headers.common["Authorization"];
+      this.$emit("logout-success");
     },
   },
 };
