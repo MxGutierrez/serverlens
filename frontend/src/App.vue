@@ -6,8 +6,8 @@
     :username="username"
     :password="password"
     @success="handleSuccess"
-    @logout-success="cognitoSession = null"
     @error="handleError"
+    @update:cognito-session="cognitoSession = $event"
   >
     <template v-if="cognitoSession === null">
       <label for="username">Email</label>
@@ -46,8 +46,7 @@ export default {
     response: "",
   }),
   methods: {
-    handleSuccess(result) {
-      this.cognitoSession = result;
+    handleSuccess() {
       this.username = "";
       this.password = "";
     },

@@ -27,7 +27,19 @@ export default {
       required: true,
     },
   },
-  emits: ["success", "error", "logout-success"],
+  emits: ["success", "error", "update:cognito-session"],
+  created() {
+    const currentUser = userPool.getCurrentUser();
+
+    if (currentUser) {
+      currentUser.getSession((err, session) => {
+        this.$emit("update:cognito-session", currentUser);
+
+        axios.defaults.headers.common["Authorization"] =
+          session.idToken.jwtToken;
+      });
+    }
+  },
   methods: {
     signUp() {
       userPool.signUp(this.username, this.password, [], null, (err, result) => {
@@ -47,10 +59,12 @@ export default {
 
       cognitoUser.authenticateUser(authDetails, {
         onSuccess: (result) => {
-          this.$emit("success", result);
+          this.$emit("update:cognito-session", result);
 
           axios.defaults.headers.common["Authorization"] =
             result.idToken.jwtToken;
+
+          this.$emit("success");
         },
         onFailure: (err) => {
           this.$emit("error", err);
@@ -59,7 +73,10 @@ export default {
     },
     logout() {
       delete axios.defaults.headers.common["Authorization"];
-      this.$emit("logout-success");
+
+      userPool.getCurrentUser().signOut();
+
+      this.$emit("update:cognito-session", null);
     },
   },
 };
