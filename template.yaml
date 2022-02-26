@@ -1,14 +1,7 @@
-# This is the SAM template that represents the architecture of your serverless application
-# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
-
-# The AWSTemplateFormatVersion identifies the capabilities of the template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   sam-app
 
-# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
 Transform:
   - AWS::Serverless-2016-10-31
 
@@ -20,8 +13,6 @@ Globals:
     MemorySize: 128
     Timeout: 100
 
-# Resources declares the AWS resources that you want to include in the stack
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
   Api:
     Type: AWS::Serverless::Api
@@ -40,9 +31,6 @@ Resources:
         AllowOrigin: "'*'"
         # AllowOrigin: !GetAtt AppBucket.WebsiteURL
 
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
   PuppeteerLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -53,19 +41,17 @@ Resources:
         - nodejs14.x
       RetentionPolicy: Delete
 
-  # This is a Lambda function config associated with the source code: get-all-items.js
   getAllItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/get-all-items.getAllItemsHandler
       Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the UsersTable
         - DynamoDBCrudPolicy:
-            TableName: !Ref UsersTable
+            TableName: !Ref ScreencapTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref UsersTable
+          TABLE_NAME: !Ref ScreencapTable
       Events:
         Api:
           Type: Api
@@ -74,22 +60,17 @@ Resources:
             Path: /
             Method: GET
 
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-  # This is a Lambda function config associated with the source code: get-by-id.js
   getByIdFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/get-by-id.getByIdHandler
       Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the UsersTable
         - DynamoDBCrudPolicy:
-            TableName: !Ref UsersTable
+            TableName: !Ref ScreencapTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref UsersTable
+          TABLE_NAME: !Ref ScreencapTable
       Events:
         Api:
           Type: Api
@@ -98,22 +79,17 @@ Resources:
             Path: /{id}
             Method: GET
 
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-  # This is a Lambda function config associated with the source code: put-item.js
   putItemFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/put-item.putItemHandler
       Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the UsersTable
         - DynamoDBCrudPolicy:
-            TableName: !Ref UsersTable
+            TableName: !Ref ScreencapTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref UsersTable
+          TABLE_NAME: !Ref ScreencapTable
       Events:
         Api:
           Type: Api
@@ -127,13 +103,16 @@ Resources:
     Properties:
       Handler: src/handlers/screencap.handler
       Description: Takes a screencap of a given url
-      # Policies:
-      #   # Give Create/Read/Update/Delete Permissions to the UsersTable
-      #   - DynamoDBCrudPolicy:
-      #       TableName: !Ref UsersTable
-      # Environment:
-      #   Variables:
-      #     TABLE_NAME: !Ref UsersTable
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ScreencapBucket
+        - DynamoDBWritePolicy:
+            TableName: !Ref ScreencapTable
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref ScreencapBucket
+          TABLE_NAME: !Ref ScreencapTable
+      MemorySize: 512
       Layers:
         - !Ref PuppeteerLayer
       Events:
@@ -144,14 +123,10 @@ Resources:
             Path: /screencap
             Method: POST
 
-  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
-
-  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
-  UsersTable:
+  ScreencapTable:
     Type: AWS::Serverless::SimpleTable
     Properties:
-      TableName: Users
+      TableName: Screencaps
       PrimaryKey:
         Name: id
         Type: String
@@ -203,6 +178,11 @@ Resources:
       BucketName: serverless-app-frontend
       WebsiteConfiguration:
         IndexDocument: index.html
+
+  ScreencapBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: serverless-app-screencaps
 
   AppBucketPolicy:
     Type: AWS::S3::BucketPolicy
