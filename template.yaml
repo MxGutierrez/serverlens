@@ -43,6 +43,16 @@ Resources:
   # Each Lambda function is defined by properties:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
 
+  PuppeteerLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: puppeteer
+      Description: Puppeteer
+      ContentUri: layers/puppeteer
+      CompatibleRuntimes:
+        - nodejs14.x
+      RetentionPolicy: Delete
+
   # This is a Lambda function config associated with the source code: get-all-items.js
   getAllItemsFunction:
     Type: AWS::Serverless::Function
@@ -111,6 +121,29 @@ Resources:
             RestApiId: !Ref Api
             Path: /
             Method: POST
+
+  screencapFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/screencap.handler
+      Description: Takes a screencap of a given url
+      # Policies:
+      #   # Give Create/Read/Update/Delete Permissions to the UsersTable
+      #   - DynamoDBCrudPolicy:
+      #       TableName: !Ref UsersTable
+      # Environment:
+      #   Variables:
+      #     TABLE_NAME: !Ref UsersTable
+      Layers:
+        - !Ref PuppeteerLayer
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /screencap
+            Method: POST
+
   # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
 
