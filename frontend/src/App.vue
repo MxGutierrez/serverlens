@@ -20,11 +20,12 @@
       <button @click="login">Login</button>
     </template>
 
-    <button v-else @click="logout">Logout</button>
+    <template v-else>
+      <button @click="logout">Logout</button>
+      <input v-model="website" />
+      <button @click="screenshot">Screenshot</button>
+    </template>
   </Authify>
-
-  <button @click="request">Request</button>
-  <p>Response: {{ response }}</p>
 </template>
 
 <script>
@@ -43,7 +44,7 @@ export default {
     password: "",
     cognitoSession: null,
     error: null,
-    response: "",
+    website: "",
   }),
   methods: {
     handleSuccess() {
@@ -53,9 +54,12 @@ export default {
     handleError(error) {
       console.log(error);
     },
-    async request() {
-      const { data } = await axios.get("/");
-      this.response = data;
+    async screenshot() {
+      const { data } = await axios.post("/screencap", {
+        website: this.website,
+      });
+
+      console.log(data);
     },
   },
 };

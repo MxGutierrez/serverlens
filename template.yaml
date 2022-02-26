@@ -41,6 +41,16 @@ Resources:
         - nodejs14.x
       RetentionPolicy: Delete
 
+  ScreencapStatesLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: screencap-states
+      Description: Screencap States
+      ContentUri: layers/screencap-states
+      CompatibleRuntimes:
+        - nodejs14.x
+      RetentionPolicy: Delete
+
   getAllItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -102,19 +112,15 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/screencap.handler
-      Description: Takes a screencap of a given url
+      Description: Schedules screencap
       Policies:
-        - S3WritePolicy:
-            BucketName: !Ref ScreencapBucket
         - DynamoDBWritePolicy:
             TableName: !Ref ScreencapTable
       Environment:
         Variables:
-          BUCKET_NAME: !Ref ScreencapBucket
           TABLE_NAME: !Ref ScreencapTable
-      MemorySize: 512
       Layers:
-        - !Ref PuppeteerLayer
+        - !Ref ScreencapStatesLayer
       Events:
         Api:
           Type: Api
@@ -123,16 +129,60 @@ Resources:
             Path: /screencap
             Method: POST
 
+  # processScreencapFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     Handler: src/handlers/process-screencap.handler
+  #     Description: Takes a screencap of a given url
+  #     Policies:
+  #       - S3WritePolicy:
+  #           BucketName: !Ref ScreencapBucket
+  #       - DynamoDBWritePolicy:
+  #           TableName: !Ref ScreencapTable
+  #     Environment:
+  #       Variables:
+  #         BUCKET_NAME: !Ref ScreencapBucket
+  #         TABLE_NAME: !Ref ScreencapTable
+  #     MemorySize: 512
+  #     Layers:
+  #       - !Ref ScreencapStatesLayer
+  #       - !Ref PuppeteerLayer
+  # Events:
+  #   ScreencapItemInserted:
+  #     Type: DynamoDB
+  #     Properties:
+  #       StartingPosition: LATEST
+  #       Stream: !GetAtt ScreencapTable.StreamArn
+  #       FilterCriteria:
+  #         Filters:
+  #         Pattern:
+
+  # Api:
+  #   Type: Api
+  #   Properties:
+  #     RestApiId: !Ref Api
+  #     Path: /screencap
+  #     Method: POST
+
   ScreencapTable:
-    Type: AWS::Serverless::SimpleTable
+    Type: AWS::DynamoDB::Table
     Properties:
       TableName: Screencaps
-      PrimaryKey:
-        Name: id
-        Type: String
+      AttributeDefinitions:
+        - AttributeName: UserId
+          AttributeType: S
+        - AttributeName: Date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: UserId
+          KeyType: HASH
+        - AttributeName: Date
+          KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: 2
         WriteCapacityUnits: 2
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
 
   UserPool:
     Type: AWS::Cognito::UserPool
