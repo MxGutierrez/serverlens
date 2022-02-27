@@ -51,13 +51,13 @@ Resources:
         - nodejs14.x
       RetentionPolicy: Delete
 
-  getAllItemsFunction:
+  listScreencapsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/get-all-items.getAllItemsHandler
-      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+      Handler: src/handlers/list-screencaps.handler
+      Description: Lists screencaps
       Policies:
-        - DynamoDBCrudPolicy:
+        - DynamoDBReadPolicy:
             TableName: !Ref ScreencapTable
       Environment:
         Variables:
@@ -67,46 +67,8 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /
+            Path: /screencaps
             Method: GET
-
-  getByIdFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/get-by-id.getByIdHandler
-      Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ScreencapTable
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref ScreencapTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            RestApiId: !Ref Api
-            Path: /{id}
-            Method: GET
-
-  putItemFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/put-item.putItemHandler
-      Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ScreencapTable
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref ScreencapTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            RestApiId: !Ref Api
-            Path: /
-            Method: POST
 
   screencapFunction:
     Type: AWS::Serverless::Function
@@ -126,7 +88,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /screencap
+            Path: /screencaps
             Method: POST
 
   processScreencapFunction:
@@ -177,6 +139,21 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_IMAGE
 
+  preSignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: preSignup.handler
+      Description: Auto confirm signups
+
+  AllowCognitoAccessLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref preSignupFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt UserPool.Arn
+
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -192,21 +169,6 @@ Resources:
           Required: false
       LambdaConfig:
         PreSignUp: !GetAtt preSignupFunction.Arn
-
-  preSignupFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: preSignup.handler
-      Description: Auto confirm signups
-
-  AllowCognitoAccessLambda:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref preSignupFunction
-      Action: lambda:InvokeFunction
-      Principal: cognito-idp.amazonaws.com
-      SourceAccount: !Ref AWS::AccountId
-      SourceArn: !GetAtt UserPool.Arn
 
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -226,6 +188,19 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: serverless-app-screencaps
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - "*"
+            AllowedMethods:
+              - "GET"
+            AllowedHeaders:
+              - "*"
 
   AppBucketPolicy:
     Type: AWS::S3::BucketPolicy

@@ -24,6 +24,7 @@
       <button @click="logout">Logout</button>
       <input v-model="website" />
       <button @click="screenshot">Screenshot</button>
+      <button @click="listScreenshots">List Screenshots</button>
     </template>
   </Authify>
 </template>
@@ -55,9 +56,14 @@ export default {
       console.log(error);
     },
     async screenshot() {
-      const { data } = await axios.post("/screencap", {
+      const { data } = await axios.post("/screencaps", {
         website: this.website,
       });
+
+      console.log(data);
+    },
+    async listScreenshots() {
+      const { data } = await axios.get("/screencaps");
 
       console.log(data);
     },
