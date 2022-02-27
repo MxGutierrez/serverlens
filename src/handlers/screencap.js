@@ -28,7 +28,7 @@ exports.handler = async (event) => {
     }).promise();
 
     return {
-        statusCode: 200,
+        statusCode: 202,
         headers: { 
             'Access-Control-Allow-Origin': '*'
         },

@@ -129,40 +129,33 @@ Resources:
             Path: /screencap
             Method: POST
 
-  # processScreencapFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     Handler: src/handlers/process-screencap.handler
-  #     Description: Takes a screencap of a given url
-  #     Policies:
-  #       - S3WritePolicy:
-  #           BucketName: !Ref ScreencapBucket
-  #       - DynamoDBWritePolicy:
-  #           TableName: !Ref ScreencapTable
-  #     Environment:
-  #       Variables:
-  #         BUCKET_NAME: !Ref ScreencapBucket
-  #         TABLE_NAME: !Ref ScreencapTable
-  #     MemorySize: 512
-  #     Layers:
-  #       - !Ref ScreencapStatesLayer
-  #       - !Ref PuppeteerLayer
-  # Events:
-  #   ScreencapItemInserted:
-  #     Type: DynamoDB
-  #     Properties:
-  #       StartingPosition: LATEST
-  #       Stream: !GetAtt ScreencapTable.StreamArn
-  #       FilterCriteria:
-  #         Filters:
-  #         Pattern:
-
-  # Api:
-  #   Type: Api
-  #   Properties:
-  #     RestApiId: !Ref Api
-  #     Path: /screencap
-  #     Method: POST
+  processScreencapFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/process-screencap.handler
+      Description: Takes a screencap of a given url
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ScreencapBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ScreencapTable
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref ScreencapBucket
+          TABLE_NAME: !Ref ScreencapTable
+      MemorySize: 512
+      Layers:
+        - !Ref ScreencapStatesLayer
+        - !Ref PuppeteerLayer
+      Events:
+        ScreencapItemInserted:
+          Type: DynamoDB
+          Properties:
+            StartingPosition: LATEST
+            Stream: !GetAtt ScreencapTable.StreamArn
+            FilterCriteria:
+              Filters:
+                - Pattern: '{ "eventName": [ "INSERT" ], "dynamodb": { "NewImage": { "Date": { "S": [ { "prefix": "PENDING#" } ] } } } }' # Only when a new PENDING state item is inserted
 
   ScreencapTable:
     Type: AWS::DynamoDB::Table
