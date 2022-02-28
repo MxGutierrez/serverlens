@@ -49,7 +49,7 @@
             <p>No screenshots to show</p>
           </div>
 
-          <div v-else class="grid grid-cols-2 gap-5 w-full">
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
             <Screencap
               v-for="(result, index) in results?.Items"
               :key="result.Path"
@@ -123,7 +123,7 @@ export default {
         this.loadings.screencap = true;
 
         await axios.post("/screencaps", {
-          website: `https://${this.website}`,
+          website: `http://${this.website}`,
         });
 
         this.website = "";
