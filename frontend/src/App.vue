@@ -5,8 +5,37 @@
     :password="password"
     @success="handleSuccess"
     @error="handleError"
-    @update:cognito-session="cognitoSession = $event"
+    @update:cognito-session="updateCognitoSession"
   >
+    <div
+      class="flex items-center justify-between px-4 border-b border-gray-200 shadow-sm"
+    >
+      <h1
+        style="font-family: Redressed, sans-serif"
+        class="text-primary text-[60px]"
+      >
+        Serverlens
+      </h1>
+
+      <div
+        v-if="cognitoSession"
+        @click="dropdownOpened = !dropdownOpened"
+        class="relative flex items-center space-x-2 cursor-pointer"
+      >
+        <p>{{ cognitoSession.signInUserSession.idToken.payload.email }}</p>
+        <ChevronIcon dir="down" class="h-3 w-3" />
+
+        <ul
+          v-if="dropdownOpened"
+          class="absolute top-[130%] right-0 bg-white rounded-md shadow py-2 px-5"
+        >
+          <li>
+            <button @click="logout">Logout</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
     <template v-if="cognitoSession === null">
       <label for="username">Email</label>
       <input v-model="username" id="username" />
@@ -19,10 +48,14 @@
     </template>
 
     <template v-else>
-      <button @click="logout">Logout</button>
       <div class="flex-1 flex flex-col p-4">
-        <div>
-          <Input v-model="website" placeholder="www.google.com" />
+        <div class="space-x-3 flex items-center">
+          <Input
+            v-model="website"
+            @input="websiteError = null"
+            placeholder="www.google.com"
+            :invalid="websiteError !== null"
+          />
 
           <Button
             @click="screenshot"
@@ -31,6 +64,10 @@
             >Screenshot</Button
           >
         </div>
+
+        <span v-if="websiteError" class="text-red-500 text-sm mt-1">{{
+          websiteError
+        }}</span>
 
         <div class="flex justify-end mb-5">
           <Filter :items="['Completed', 'Pending']" v-model="filter" />
@@ -81,6 +118,7 @@ import Filter from "./components/Filter.vue";
 import Screencap from "./components/Screencap.vue";
 import Loader from "./components/Loader.vue";
 import Spinner from "./components/icons/Spinner.vue";
+import ChevronIcon from "./components/icons/Chevron.vue";
 
 import axios from "axios";
 
@@ -95,13 +133,17 @@ export default {
     Screencap,
     Loader,
     Spinner,
+    ChevronIcon,
   },
   data: () => ({
     username: "",
     password: "",
     cognitoSession: null,
     error: null,
+
     website: "",
+    websiteError: null,
+
     results: null,
     loadings: {
       screencap: false,
@@ -109,6 +151,7 @@ export default {
       listMore: false,
     },
     filter: "Completed",
+    dropdownOpened: false,
   }),
   methods: {
     handleSuccess() {
@@ -119,6 +162,12 @@ export default {
       console.log(error);
     },
     async screenshot() {
+      if (!/^www\.[a-zA-Z-._]{2,256}\.[a-z]{2,6}$/.test(this.website)) {
+        this.websiteError = "Make sure the url has the correct format";
+        return;
+      }
+      this.websiteError = null;
+
       try {
         this.loadings.screencap = true;
 
@@ -163,12 +212,16 @@ export default {
         this.loadings.listMore = false;
       }
     },
+    updateCognitoSession(session) {
+      this.cognitoSession = session;
+
+      if (session && this.results === null) {
+        this.listScreenshots();
+      }
+    },
   },
   watch: {
-    filter: {
-      handler: "listScreenshots",
-      // immediate: true // not authenticated at this point
-    },
+    filter: "listScreenshots",
   },
 };
 </script>

@@ -33,10 +33,10 @@ export default {
 
     if (currentUser) {
       currentUser.getSession((err, session) => {
-        this.$emit("update:cognito-session", currentUser);
-
         axios.defaults.headers.common["Authorization"] =
           session.idToken.jwtToken;
+
+        this.$emit("update:cognito-session", currentUser);
       });
     }
   },

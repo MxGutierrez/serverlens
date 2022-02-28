@@ -27,7 +27,7 @@
         <TrashIcon
           @click.prevent="handleDelete"
           class="text-gray-300 h-6 w-6 cursor-pointer"
-          :class="{ 'hover:text-red-600': !deleting }"
+          :class="{ 'hover:text-red-500': !deleting }"
         />
       </div>
     </div>
