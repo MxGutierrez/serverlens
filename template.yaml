@@ -62,6 +62,8 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref ScreencapTable
+      Layers:
+        - !Ref ScreencapStatesLayer
       Events:
         Api:
           Type: Api
@@ -69,6 +71,25 @@ Resources:
             RestApiId: !Ref Api
             Path: /screencaps
             Method: GET
+
+  deleteScreencapFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/delete-screencap.handler
+      Description: Deletes screencap with provided date from authenticated user
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ScreencapTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ScreencapTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /screencaps/{date}
+            Method: DELETE
 
   screencapFunction:
     Type: AWS::Serverless::Function
@@ -189,10 +210,10 @@ Resources:
     Properties:
       BucketName: serverless-app-screencaps
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:
@@ -201,6 +222,19 @@ Resources:
               - "GET"
             AllowedHeaders:
               - "*"
+
+  ScreencapBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ScreencapBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "s3:GetObject"
+            Effect: Allow
+            Resource: !Sub "${ScreencapBucket.Arn}/*"
+            Principal: "*"
 
   AppBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -219,12 +253,14 @@ Resources:
               - /*
 
 Outputs:
-  WebsiteUrl:
+  FrontendUrl:
     Value: !GetAtt AppBucket.WebsiteURL
-  WebEndpoint:
+  BackendEndpoint:
     Description: "API Gateway endpoint URL for Prod stage"
     Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod/"
   UserPoolID:
     Value: !Ref UserPool
   UserPoolClientID:
     Value: !Ref CognitoUserPoolClient
+  ScreencapBucketUrl:
+    Value: !Sub "https://${ScreencapBucket.DomainName}"
