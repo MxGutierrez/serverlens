@@ -16,7 +16,7 @@ exports.handler = async (event) => {
     const data = await docClient.query({
         TableName: tableName,
         KeyConditionExpression: 'UserId = :id and begins_with(#date, :status)',
-        ProjectionExpression: '#date, #path, Website',
+        ProjectionExpression: '#date, #path, Website, FailureReason',
         ExpressionAttributeValues: {
             ":id": event.requestContext.authorizer.claims.sub,
             ":status": event.queryStringParameters?.status === 'Pending' ? screencapStates.PENDING: screencapStates.COMPLETED

@@ -10,6 +10,7 @@
 </template>
 
 <script>
+// Auth logic from this component could be moved to api gateway endpoint
 import {
   CognitoUserPool,
   CognitoUser,
@@ -122,7 +123,6 @@ export default {
           },
           onFailure: (error) => {
             this.error = error;
-            console.log(error.message);
             this.loggingIn = false;
 
             reject();

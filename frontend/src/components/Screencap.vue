@@ -1,5 +1,6 @@
 <template>
   <div
+    v-if="screencap.Date.split('#')[0] === 'COMPLETED'"
     class="block rounded-md overflow-hidden shadow group"
     :class="{ 'opacity-30': deleting }"
   >
@@ -25,17 +26,39 @@
         </a>
 
         <TrashIcon
-          @click.prevent="handleDelete"
+          @click="handleDelete"
           class="text-gray-300 h-6 w-6 cursor-pointer"
           :class="{ 'hover:text-red-500': !deleting }"
         />
       </div>
     </div>
   </div>
+
+  <div
+    v-else
+    class="rounded-md bg-white p-3 flex justify-between shadow"
+    :class="{ 'bg-red-50': hasFailed }"
+  >
+    <div>
+      <div class="flex items-center space-x-2">
+        <p>{{ hasFailed ? "Failed" : "In progress" }}</p>
+        <AlertIcon v-if="hasFailed" class="h-4 w-4 opacity-50" />
+      </div>
+      <p class="text-sm">{{ screencap.Website }}</p>
+    </div>
+
+    <TrashIcon
+      v-if="hasFailed"
+      @click="handleDelete"
+      class="text-gray-300 h-6 w-6 cursor-pointer"
+      :class="{ 'hover:text-red-500': !deleting }"
+    />
+  </div>
 </template>
 
 <script>
 import TrashIcon from "./icons/Trash.vue";
+import AlertIcon from "./icons/Alert.vue";
 import ExternalLinkIcon from "./icons/ExternalLink.vue";
 import DownloadIcon from "./icons/Download.vue";
 
@@ -47,6 +70,7 @@ export default {
     TrashIcon,
     ExternalLinkIcon,
     DownloadIcon,
+    AlertIcon,
   },
   props: {
     screencap: {
@@ -63,6 +87,9 @@ export default {
     },
     date() {
       return dayjs(this.screencap.Date.split("#")[1]).fromNow();
+    },
+    hasFailed() {
+      return Boolean(this.screencap.FailureReason);
     },
   },
   methods: {

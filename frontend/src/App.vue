@@ -98,24 +98,26 @@
             <p>No screenshots to show</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
-            <Screencap
-              v-for="(result, index) in results?.Items"
-              :key="result.Path"
-              :screencap="result"
-              @deleted="results.Items.splice(index, 1)"
-            />
-          </div>
+          <template v-else>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
+              <Screencap
+                v-for="(result, index) in results?.Items"
+                :key="result.Path"
+                :screencap="result"
+                @deleted="results.Items.splice(index, 1)"
+              />
+            </div>
 
-          <div
-            v-if="results?.LastEvaluatedKey"
-            class="flex items-center justify-center mt-3 text-primary"
-          >
-            <Spinner v-if="loadings.listMore" class="my-1" />
-            <button v-else @click="loadMore" class="px-3 py-1">
-              Load more
-            </button>
-          </div>
+            <div
+              v-if="results?.LastEvaluatedKey"
+              class="flex items-center justify-center mt-3 text-primary"
+            >
+              <Spinner v-if="loadings.listMore" class="my-1" />
+              <button v-else @click="loadMore" class="px-3 py-1">
+                Load more
+              </button>
+            </div>
+          </template>
         </div>
       </template>
     </div>
