@@ -1,10 +1,9 @@
 <template>
   <Authify
-    v-slot="{ signUp, login, logout }"
+    v-slot="{ signUp, login, logout, signingUp, loggingIn, error }"
     :username="username"
     :password="password"
     @success="handleSuccess"
-    @error="handleError"
     @update:cognito-session="updateCognitoSession"
   >
     <div
@@ -22,55 +21,68 @@
         @click="dropdownOpened = !dropdownOpened"
         class="relative flex items-center space-x-2 cursor-pointer"
       >
-        <p>{{ cognitoSession.signInUserSession.idToken.payload.email }}</p>
+        <p>{{ cognitoSession.idToken.payload.email }}</p>
         <ChevronIcon dir="down" class="h-3 w-3" />
 
         <ul
           v-if="dropdownOpened"
-          class="absolute top-[130%] right-0 bg-white rounded-md shadow py-2 px-5"
+          class="absolute top-[130%] right-0 bg-white rounded-md shadow"
         >
           <li>
-            <button @click="logout">Logout</button>
+            <button @click="logout" class="px-5 py-2">Logout</button>
           </li>
         </ul>
       </div>
     </div>
 
-    <template v-if="cognitoSession === null">
-      <label for="username">Email</label>
-      <input v-model="username" id="username" />
+    <div
+      class="flex-1 flex flex-col p-4"
+      :class="{ 'justify-center': cognitoSession === null }"
+      style="background-color: #f9fafb"
+    >
+      <LoginForm
+        v-if="cognitoSession === null"
+        :login="login"
+        :sign-up="signUp"
+        :signing-up="signingUp"
+        :logging-in="loggingIn"
+        v-model:username="username"
+        v-model:password="password"
+        :error="error"
+        class="self-center"
+      />
 
-      <label for="password">Password</label>
-      <input v-model="password" type="password" id="password" />
+      <template v-else>
+        <div
+          class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between mb-5"
+        >
+          <div class="w-full sm:w-1/2">
+            <div class="space-x-3 flex-1 flex items-center w-full">
+              <Input
+                v-model="website"
+                @input="websiteError = null"
+                @keyup.enter="screenshot"
+                placeholder="www.google.com"
+                :invalid="websiteError !== null"
+                class="flex-1 sm:max-w-[380px]"
+              />
 
-      <button @click="signUp">Signup</button>
-      <button @click="login">Login</button>
-    </template>
+              <Button
+                @click="screenshot"
+                :loading="loadings.screencap"
+                :disabled="loadings.screencap"
+                >Screenshot</Button
+              >
+            </div>
 
-    <template v-else>
-      <div class="flex-1 flex flex-col p-4">
-        <div class="space-x-3 flex items-center">
-          <Input
-            v-model="website"
-            @input="websiteError = null"
-            placeholder="www.google.com"
-            :invalid="websiteError !== null"
-          />
+            <span v-if="websiteError" class="text-red-500 text-sm mt-1">{{
+              websiteError
+            }}</span>
+          </div>
 
-          <Button
-            @click="screenshot"
-            :loading="loadings.screencap"
-            :disabled="loadings.screencap"
-            >Screenshot</Button
-          >
-        </div>
-
-        <span v-if="websiteError" class="text-red-500 text-sm mt-1">{{
-          websiteError
-        }}</span>
-
-        <div class="flex justify-end mb-5">
-          <Filter :items="['Completed', 'Pending']" v-model="filter" />
+          <div class="flex justify-end mt-5 sm:mt-0">
+            <Filter :items="['Completed', 'Pending']" v-model="filter" />
+          </div>
         </div>
 
         <div class="flex-1 w-full flex flex-col">
@@ -91,7 +103,7 @@
               v-for="(result, index) in results?.Items"
               :key="result.Path"
               :screencap="result"
-              @deleted="results.splice(index, 1)"
+              @deleted="results.Items.splice(index, 1)"
             />
           </div>
 
@@ -105,8 +117,8 @@
             </button>
           </div>
         </div>
-      </div>
-    </template>
+      </template>
+    </div>
   </Authify>
 </template>
 
@@ -119,6 +131,7 @@ import Screencap from "./components/Screencap.vue";
 import Loader from "./components/Loader.vue";
 import Spinner from "./components/icons/Spinner.vue";
 import ChevronIcon from "./components/icons/Chevron.vue";
+import LoginForm from "./components/LoginForm.vue";
 
 import axios from "axios";
 
@@ -134,12 +147,12 @@ export default {
     Loader,
     Spinner,
     ChevronIcon,
+    LoginForm,
   },
   data: () => ({
     username: "",
     password: "",
     cognitoSession: null,
-    error: null,
 
     website: "",
     websiteError: null,
@@ -158,9 +171,6 @@ export default {
       this.username = "";
       this.password = "";
     },
-    handleError(error) {
-      console.log(error);
-    },
     async screenshot() {
       if (!/^www\.[a-zA-Z-._]{2,256}\.[a-z]{2,6}$/.test(this.website)) {
         this.websiteError = "Make sure the url has the correct format";
@@ -172,7 +182,7 @@ export default {
         this.loadings.screencap = true;
 
         await axios.post("/screencaps", {
-          website: `http://${this.website}`,
+          website: this.website,
         });
 
         this.website = "";

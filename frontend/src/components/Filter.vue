@@ -1,11 +1,13 @@
 <template>
-  <div class="space-x-3 border border-gray-200 rounded-lg p-2">
+  <div
+    class="space-x-3 border border-gray-200 rounded-lg p-2 bg-white text-sm font-semibold"
+  >
     <button
       v-for="item in items"
       :key="item"
       @click="$emit('update:modelValue', item)"
       class="rounded-md focus:ring-primary h-9 px-3"
-      :class="{ 'text-white bg-primary': modelValue === item }"
+      :class="{ 'text-white bg-primary font-semibold': modelValue === item }"
     >
       {{ item }}
     </button>

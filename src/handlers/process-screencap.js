@@ -45,7 +45,7 @@ exports.handler = async (event) => {
         }
 
         console.info(`Moving to website: ${website}`);
-        await page.goto(website)
+        await page.goto(`http://${website}`);
 
         console.info('Screenshotting website');
         const screencap = await page.screenshot();
@@ -56,7 +56,7 @@ exports.handler = async (event) => {
 
         console.info(`Screenshot successful, saving to bucket: ${process.env.BUCKET_NAME}`);
 
-        const filename = `${uuid.v4()}.png`;
+        const filename = `${record.dynamodb.Keys.UserId.S}/${uuid.v4()}.png`;
 
         await s3.putObject({
             Bucket: bucketName,

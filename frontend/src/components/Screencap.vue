@@ -9,19 +9,19 @@
       <a
         :href="screencap.Website"
         target="__blank"
-        class="absolute flex items-center -bottom-[32px] left-0 opacity-0 group-hover:opacity-100 group-hover:bottom-0 bg-primary text-white text-sm transition-all duration-200 ease-out py-1 px-3 rounded-t-lg ml-3"
+        class="absolute flex items-center bottom-0 sm:-bottom-[32px] left-0 sm:opacity-0 group-hover:opacity-100 group-hover:bottom-0 bg-primary text-white text-sm transition-all duration-200 ease-out py-1 px-3 rounded-t-lg ml-3"
       >
-        {{ website }}
+        {{ screencap.Website }}
         <ExternalLinkIcon class="h-3 w-3 ml-2" />
       </a>
     </div>
 
-    <div class="p-4 flex justify-between">
+    <div class="p-4 flex justify-between bg-white">
       <p>{{ date }}</p>
 
       <div class="flex items-center space-x-3">
         <a :href="imageUrl" download>
-          <DownloadIcon class="h-6 w-6 text-gray-300 hover:text-gray-500" />
+          <DownloadIcon class="h-6 w-6 text-gray-300 hover:text-primary" />
         </a>
 
         <TrashIcon
@@ -63,9 +63,6 @@ export default {
     },
     date() {
       return dayjs(this.screencap.Date.split("#")[1]).fromNow();
-    },
-    website() {
-      return this.screencap.Website.replace(/^https?:\/\//, "");
     },
   },
   methods: {

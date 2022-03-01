@@ -1,5 +1,12 @@
 <template>
-  <slot :sign-up="signUp" :login="login" :logout="logout"></slot>
+  <slot
+    :sign-up="signUp"
+    :login="login"
+    :logout="logout"
+    :signing-up="signingUp"
+    :logging-in="loggingIn"
+    :error="error"
+  ></slot>
 </template>
 
 <script>
@@ -28,6 +35,12 @@ export default {
     },
   },
   emits: ["success", "error", "update:cognito-session"],
+  data: () => ({
+    loggingIn: false,
+    signingUp: false,
+    signedUp: false,
+    error: null,
+  }),
   created() {
     const currentUser = userPool.getCurrentUser();
 
@@ -36,17 +49,53 @@ export default {
         axios.defaults.headers.common["Authorization"] =
           session.idToken.jwtToken;
 
-        this.$emit("update:cognito-session", currentUser);
+        this.$emit(
+          "update:cognito-session",
+          currentUser.getSignInUserSession()
+        );
       });
     }
   },
   methods: {
     signUp() {
-      userPool.signUp(this.username, this.password, [], null, (err, result) => {
-        console.log("sign up ", err, result);
-      });
+      if (this.signingUp || this.loggingIn) {
+        return;
+      }
+
+      this.error = null;
+
+      this.signingUp = true;
+
+      userPool.signUp(
+        this.username,
+        this.password,
+        [],
+        null,
+        async (err, result) => {
+          console.log("sign up ", err, result);
+          if (err) {
+            this.error = err;
+          } else {
+            this.signedUp = true;
+            await this.login();
+            this.signedUp = true;
+          }
+
+          this.signingUp = false;
+        }
+      );
     },
     login() {
+      if ((this.signingUp && !this.signedUp) || this.loggingIn) {
+        return;
+      }
+
+      if (!this.signedUp) {
+        this.loggingIn = true;
+      }
+
+      this.error = null;
+
       const cognitoUser = new CognitoUser({
         Username: this.username,
         Pool: userPool,
@@ -57,18 +106,28 @@ export default {
         Password: this.password,
       });
 
-      cognitoUser.authenticateUser(authDetails, {
-        onSuccess: (result) => {
-          this.$emit("update:cognito-session", result);
+      return new Promise((resolve, reject) => {
+        cognitoUser.authenticateUser(authDetails, {
+          onSuccess: (result) => {
+            axios.defaults.headers.common["Authorization"] =
+              result.idToken.jwtToken;
 
-          axios.defaults.headers.common["Authorization"] =
-            result.idToken.jwtToken;
+            this.$emit("update:cognito-session", result);
 
-          this.$emit("success");
-        },
-        onFailure: (err) => {
-          this.$emit("error", err);
-        },
+            this.$emit("success");
+
+            this.loggingIn = false;
+
+            resolve();
+          },
+          onFailure: (error) => {
+            this.error = error;
+            console.log(error.message);
+            this.loggingIn = false;
+
+            reject();
+          },
+        });
       });
     },
     logout() {
