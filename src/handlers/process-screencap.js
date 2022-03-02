@@ -5,7 +5,7 @@ const dynamodb = require('aws-sdk/clients/dynamodb');
 const screencapStates = require('/opt/screencap-states.js')
 
 let browser;
-let page;
+
 const s3 = new AWS.S3();
 
 const bucketName = process.env.BUCKET_NAME;
@@ -19,8 +19,6 @@ const docClient = new dynamodb.DocumentClient({
 
 exports.handler = async (event) => {
     console.info('event: ', event);
-
-    const batchItemFailures = [];
 
     for (const record of event.Records) {
         console.info('Processing record: ', record);
@@ -42,16 +40,16 @@ exports.handler = async (event) => {
                 });
             }
             
-            if (!page) {
-                console.info('Starting new page');
-                page = await browser.newPage();
-            }
+            console.info('Starting new page');
+            const page = await browser.newPage();
 
             console.info(`Moving to website: ${website}`);
             await page.goto(`http://${website}`);
 
             console.info('Screenshotting website');
             const screencap = await page.screenshot();
+
+            await page.close();
 
             if (!screencap) {
                 throw new Error(`Error generating screencap for website: ${website}`);
@@ -127,14 +125,16 @@ exports.handler = async (event) => {
 
                 console.info('Failure: ', ex);
 
-                batchItemFailures.push({
-                    itemIdentifier: record.dynamodb.SequenceNumber
-                });
+                return {
+                    batchItemFailures: [{
+                        itemIdentifier: record.dynamodb.SequenceNumber
+                    }]
+                };
             }
         }
     }
 
     return {
-        batchItemFailures
+        batchItemFailures: []
     }
 }
