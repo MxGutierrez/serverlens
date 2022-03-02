@@ -13,13 +13,15 @@ const docClient = new dynamodb.DocumentClient({
 exports.handler = async (event) => {
     console.info('received:', event, event.queryStringParameters);
 
+    const requestingPending = event.queryStringParameters?.status === 'Pending';
+
     const data = await docClient.query({
         TableName: tableName,
         KeyConditionExpression: 'UserId = :id and begins_with(#date, :status)',
         ProjectionExpression: '#date, #path, Website, FailureReason',
         ExpressionAttributeValues: {
             ":id": event.requestContext.authorizer.claims.sub,
-            ":status": event.queryStringParameters?.status === 'Pending' ? screencapStates.PENDING: screencapStates.COMPLETED
+            ":status": requestingPending ? screencapStates.PENDING: screencapStates.COMPLETED
         },
         ExpressionAttributeNames: {
             "#date": "Date",
@@ -27,7 +29,7 @@ exports.handler = async (event) => {
         },
         ScanIndexForward: false,
         ExclusiveStartKey: event.queryStringParameters?.cursor ? JSON.parse(event.queryStringParameters.cursor) : undefined,
-        Limit: 6
+        Limit: requestingPending ? 12: 6
     }).promise();
 
 
