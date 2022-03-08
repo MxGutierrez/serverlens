@@ -57,7 +57,7 @@ exports.handler = async (event) => {
 
             console.info(`Screenshot successful, saving to bucket: ${process.env.BUCKET_NAME}`);
 
-            const filename = `${record.dynamodb.Keys.UserId.S}/${uuid.v4()}.png`;
+            const filename = `${record.dynamodb.Keys.PK.S.split('#')[1]}/${uuid.v4()}.png`;
 
             await s3.putObject({
                 Bucket: bucketName,
@@ -78,15 +78,12 @@ exports.handler = async (event) => {
                         Delete: {
                             TableName: tableName,
                             Key: {
-                                UserId: record.dynamodb.Keys.UserId.S,
-                                Date: record.dynamodb.Keys.Date.S
+                                PK: record.dynamodb.Keys.PK.S,
+                                SK: record.dynamodb.Keys.SK.S
                             },
-                            ConditionExpression: 'begins_with(#date, :pending)', // Only execute transaction when item is in pending state
-                            ExpressionAttributeNames: {
-                                '#date': 'Date',
-                            },
+                            ConditionExpression: 'begins_with(SK, :pending)', // Only execute transaction when item is in pending state
                             ExpressionAttributeValues: {
-                                ':pending': `${screencapStates.PENDING}#`
+                                ':pending': `SCREENCAP#${screencapStates.PENDING}#`
                             }
                         }
                     },
@@ -94,9 +91,9 @@ exports.handler = async (event) => {
                         Put: {
                             TableName: tableName,
                             Item: {
-                                UserId: record.dynamodb.Keys.UserId.S,
-                                Date: `${screencapStates.COMPLETED}#${new Date().toISOString()}`,
-                                RequestedDate: record.dynamodb.Keys.Date.S.split('#')[1],
+                                PK: record.dynamodb.Keys.PK.S,
+                                SK: `SCREENCAP#${screencapStates.COMPLETED}#${new Date().toISOString()}`,
+                                RequestedDate: record.dynamodb.Keys.SK.S.split('#')[2],
                                 Path: filename,
                                 Website: website
                             }
@@ -112,8 +109,8 @@ exports.handler = async (event) => {
                 await docClient.update({
                     TableName: tableName,
                     Key: {
-                        UserId: record.dynamodb.Keys.UserId.S,
-                        Date: record.dynamodb.Keys.Date.S
+                        PK: record.dynamodb.Keys.PK.S,
+                        SK: record.dynamodb.Keys.SK.S
                     },
                     UpdateExpression: 'set FailureReason = :reason',
                     ExpressionAttributeValues: {

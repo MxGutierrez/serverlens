@@ -1,9 +1,21 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  sam-app
+  serverlens
 
 Transform:
   - AWS::Serverless-2016-10-31
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues:
+      - prod
+      - local
+    Default: prod
+    Description: Enter prod|local. Default is prod
+
+Conditions:
+  LocalDeploy: !Equals [!Ref Env, local]
 
 Globals:
   Function:
@@ -17,7 +29,7 @@ Resources:
   Api:
     Type: AWS::Serverless::Api
     Properties:
-      Name: sam-app
+      Name: serverlens
       StageName: prod
       Auth:
         AddDefaultAuthorizerToCorsPreflight: False # Otherwise OPTIONS preflight request will also require Authorization token but browsers do not include headers on pre flight requests
@@ -28,8 +40,26 @@ Resources:
       Cors:
         AllowMethods: "'*'"
         AllowHeaders: "'*'"
-        AllowOrigin: "'*'"
-        # AllowOrigin: !GetAtt AppBucket.WebsiteURL
+        AllowOrigin:
+          !If [
+            LocalDeploy,
+            "'http://localhost:8080'",
+            !Sub "'${AppBucket.WebsiteURL}'",
+          ]
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+      MethodSettings:
+        - HttpMethod: POST
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 10
+          ResourcePath: /screencaps
 
   PuppeteerLayer:
     Type: AWS::Serverless::LayerVersion
@@ -58,10 +88,10 @@ Resources:
       Description: Lists screencaps
       Policies:
         - DynamoDBReadPolicy:
-            TableName: !Ref ScreencapTable
+            TableName: !Ref DBTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref ScreencapTable
+          TABLE_NAME: !Ref DBTable
       Layers:
         - !Ref ScreencapStatesLayer
       Events:
@@ -76,19 +106,19 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/delete-screencap.handler
-      Description: Deletes screencap with provided date from authenticated user
+      Description: Deletes screencap with provided SK from authenticated user
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref ScreencapTable
+            TableName: !Ref DBTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref ScreencapTable
+          TABLE_NAME: !Ref DBTable
       Events:
         Api:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /screencaps/{date}
+            Path: /screencaps/{SK}
             Method: DELETE
 
   screencapFunction:
@@ -98,10 +128,10 @@ Resources:
       Description: Schedules screencap
       Policies:
         - DynamoDBWritePolicy:
-            TableName: !Ref ScreencapTable
+            TableName: !Ref DBTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref ScreencapTable
+          TABLE_NAME: !Ref DBTable
       Layers:
         - !Ref ScreencapStatesLayer
       Events:
@@ -121,11 +151,13 @@ Resources:
         - S3WritePolicy:
             BucketName: !Ref ScreencapBucket
         - DynamoDBCrudPolicy:
-            TableName: !Ref ScreencapTable
+            TableName: !Ref DBTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ScreencapDLQ.QueueName
       Environment:
         Variables:
           BUCKET_NAME: !Ref ScreencapBucket
-          TABLE_NAME: !Ref ScreencapTable
+          TABLE_NAME: !Ref DBTable
       MemorySize: 512
       Layers:
         - !Ref ScreencapStatesLayer
@@ -134,25 +166,37 @@ Resources:
         ScreencapItemInserted:
           Type: DynamoDB
           Properties:
-            StartingPosition: LATEST
-            Stream: !GetAtt ScreencapTable.StreamArn
+            BatchSize: 10
+            StartingPosition: TRIM_HORIZON # Oldest -> Newest order processing
+            Stream: !GetAtt DBTable.StreamArn
+            DestinationConfig:
+              OnFailure:
+                Destination: !GetAtt ScreencapDLQ.Arn
+            BisectBatchOnFunctionError: true
+            FunctionResponseTypes:
+              - ReportBatchItemFailures # Enables partial success responses for record batches
+            MaximumRetryAttempts: 1
+            MaximumBatchingWindowInSeconds: 5 # Maximum amount of time to gather records before invoking the function
             FilterCriteria:
               Filters:
-                - Pattern: '{ "eventName": [ "INSERT" ], "dynamodb": { "NewImage": { "Date": { "S": [ { "prefix": "PENDING#" } ] } } } }' # Only when a new PENDING state item is inserted
+                - Pattern: '{ "eventName": [ "INSERT" ], "dynamodb": { "NewImage": { "SK": { "S": [ { "prefix": "SCREENCAP#PENDING#" } ] } } } }' # Only when a new PENDING state item is inserted
 
-  ScreencapTable:
+  ScreencapDLQ:
+    Type: AWS::SQS::Queue
+
+  DBTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: Screencaps
+      TableName: Serverlens
       AttributeDefinitions:
-        - AttributeName: UserId
+        - AttributeName: PK
           AttributeType: S
-        - AttributeName: Date
+        - AttributeName: SK
           AttributeType: S
       KeySchema:
-        - AttributeName: UserId
+        - AttributeName: PK
           KeyType: HASH
-        - AttributeName: Date
+        - AttributeName: SK
           KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: 2
@@ -178,7 +222,7 @@ Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: sam-user-pool
+      UserPoolName: serverlens-user-pool
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -195,20 +239,20 @@ Resources:
     Type: AWS::Cognito::UserPoolClient
     Properties:
       UserPoolId: !Ref UserPool
-      ClientName: sam-user-pool-client
+      ClientName: serverlens-user-pool-client
       GenerateSecret: false
 
   AppBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: serverless-app-frontend
+      BucketName: serverlens-frontend
       WebsiteConfiguration:
         IndexDocument: index.html
 
   ScreencapBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: serverless-app-screencaps
+      BucketName: serverlens-screencaps
       PublicAccessBlockConfiguration:
         BlockPublicAcls: false
         BlockPublicPolicy: false
@@ -217,7 +261,11 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:
-              - "*"
+              - !If [
+                  LocalDeploy,
+                  http://localhost:8080,
+                  !GetAtt AppBucket.WebsiteURL,
+                ]
             AllowedMethods:
               - "GET"
             AllowedHeaders:

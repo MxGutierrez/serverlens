@@ -10,13 +10,13 @@ const docClient = new dynamodb.DocumentClient({
 });
 
 exports.handler = async (event) => {
-    console.info('received:', event, event.pathParameters?.date);
+    console.info('received:', event, event.pathParameters?.SK);
 
     await docClient.delete({
         TableName: tableName,
         Key: {
-            UserId: event.requestContext.authorizer.claims.sub,
-            Date: decodeURIComponent(event.pathParameters.date)
+            PK: `USER#${event.requestContext.authorizer.claims.sub}`,
+            SK: decodeURIComponent(event.pathParameters.SK)
         }
     }).promise();
 

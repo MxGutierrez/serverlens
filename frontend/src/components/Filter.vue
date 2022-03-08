@@ -1,6 +1,6 @@
 <template>
   <div
-    class="space-x-3 border border-gray-200 rounded-lg p-2 bg-white text-sm font-semibold"
+    class="space-x-3 border border-gray-200 rounded-lg p-3 bg-white text-sm font-semibold"
   >
     <button
       v-for="item in items"

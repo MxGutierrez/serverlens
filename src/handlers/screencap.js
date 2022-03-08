@@ -1,3 +1,7 @@
+// I could also make a direct mapping between api gateway and dynamodb and remove this lambda:
+// Using Velocity Mapping Templates you can change the normal POST parameters into the arguments that DynamoDB requires for the PUT action. This is great for simple logic where the Lambda would have just transformed the request before doing the DynamoDB command
+// https://www.jeffersonfrank.com/insights/aws-lambda-design-considerations
+
 const dynamodb = require('aws-sdk/clients/dynamodb');
 const screencapStates = require('/opt/screencap-states.js');
 
@@ -21,8 +25,8 @@ exports.handler = async (event) => {
     await docClient.put({
         TableName: tableName,
         Item: {
-            UserId: event.requestContext.authorizer.claims.sub,
-            Date: `${screencapStates.PENDING}#${new Date().toISOString()}`,
+            PK: `USER#${event.requestContext.authorizer.claims.sub}`,
+            SK: `SCREENCAP#${screencapStates.PENDING}#${new Date().toISOString()}`,
             Website: website
         }
     }).promise();
