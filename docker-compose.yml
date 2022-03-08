@@ -4,7 +4,7 @@ services:
   dynamodb:
     image: amazon/dynamodb-local
     networks:
-      - serverless
+      - serverlens
     ports:
       - '8000:8000'
     volumes:
@@ -13,8 +13,8 @@ services:
     command: '-jar DynamoDBLocal.jar -sharedDb -dbPath .'
 
 networks:
-  serverless:
-    name: serverless
+  serverlens:
+    name: serverlens
 
 volumes:
   dynamodata: {}

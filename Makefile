@@ -1,6 +1,6 @@
 dev:
 	docker-compose up -d
-	sam local start-api --docker-network serverless --env-vars ./env.json
+	sam local start-api --docker-network serverlens --env-vars ./env.json
 
 local-db:
 	aws dynamodb create-table \
@@ -13,8 +13,20 @@ local-db:
 		--endpoint-url http://localhost:8000
 
 local-put-test-event:
-	sam local invoke --event events/event-post-item.json putItemFunction --docker-network serverless
+	sam local invoke --event events/event-post-item.json putItemFunction --docker-network serverlens
+
+local-deploy:
+	sam build && sam deploy --stack-name serverlens --parameter-overrides Env=local --no-confirm-changeset
+
+deploy:
+	sam build && sam deploy --stack-name serverlens --no-confirm-changeset
+
+destroy:
+	sam delete --stack-name serverlens
 
 deploy-frontend:
 	(cd frontend && npm run build) # make build package without moving into frontend directory
-	aws s3 sync frontend/dist/ s3://serverless-app-frontend --delete
+	aws s3 sync frontend/dist/ s3://serverlens-frontend --delete
+
+# sync $():
+# 	sam sync --stack-name serverlens --code --resource-id ${}
