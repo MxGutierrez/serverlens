@@ -43,6 +43,15 @@ export default {
     error: null,
   }),
   created() {
+    axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response.status === 401) {
+          this.logout();
+        }
+      }
+    );
+
     const currentUser = userPool.getCurrentUser();
 
     if (currentUser) {
@@ -133,9 +142,11 @@ export default {
     logout() {
       delete axios.defaults.headers.common["Authorization"];
 
-      userPool.getCurrentUser().signOut();
-
-      this.$emit("update:cognito-session", null);
+      try {
+        userPool.getCurrentUser().signOut();
+      } finally {
+        this.$emit("update:cognito-session", null);
+      }
     },
   },
 };
