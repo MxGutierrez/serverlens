@@ -63,6 +63,7 @@ exports.handler = async (event) => {
                 Bucket: bucketName,
                 Key: filename,
                 Body: screencap,
+                ContentDisposition: `attachment; filename=${website}`
             }).promise();
 
             console.info(`Screenshot saved as: ${filename}`);
