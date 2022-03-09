@@ -1,0 +1,7 @@
+{
+  "name": "process-screencap",
+  "version": "1.0.0",
+  "dependencies": {
+    "uuid": "^8.3.2"
+  }
+}

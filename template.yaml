@@ -84,7 +84,8 @@ Resources:
   listScreencapsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/list-screencaps.handler
+      CodeUri: ./src/handlers/list-screencaps
+      Handler: index.handler
       Description: Lists screencaps
       Policies:
         - DynamoDBReadPolicy:
@@ -105,7 +106,8 @@ Resources:
   deleteScreencapFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/delete-screencap.handler
+      CodeUri: ./src/handlers/delete-screencap
+      Handler: index.handler
       Description: Deletes screencap with provided SK from authenticated user
       Policies:
         - DynamoDBCrudPolicy:
@@ -124,7 +126,8 @@ Resources:
   screencapFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/screencap.handler
+      CodeUri: ./src/handlers/screencap
+      Handler: index.handler
       Description: Schedules screencap
       Policies:
         - DynamoDBWritePolicy:
@@ -145,7 +148,8 @@ Resources:
   processScreencapFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/process-screencap.handler
+      CodeUri: ./src/handlers/process-screencap
+      Handler: index.handler
       Description: Takes a screencap of a given url
       Policies:
         - S3WritePolicy:
@@ -207,7 +211,8 @@ Resources:
   preSignupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: preSignup.handler
+      CodeUri: ./pre-signup
+      Handler: index.handler
       Description: Auto confirm signups
 
   AllowCognitoAccessLambda:
