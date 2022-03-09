@@ -2,7 +2,7 @@
   <input
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
-    class="border border-gray-300 rounded-md focus:ring-primary h-9 px-3"
+    class="border border-gray-300 rounded-md focus:ring-primary h-9 px-3 text-sm"
     :class="{ 'border-red-500': invalid }"
   />
 </template>
