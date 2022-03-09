@@ -80,7 +80,13 @@
             }}</span>
           </div>
 
-          <div class="flex justify-end mt-5 sm:mt-0">
+          <div class="flex justify-end mt-5 sm:mt-0 items-center space-x-5">
+            <button
+              @click="listScreenshots"
+              class="p-2 rounded-full bg-white border border-gray-200"
+            >
+              <RefreshIcon :class="{ 'animate-spin-reverse': loadings.list }" />
+            </button>
             <Filter :items="['Completed', 'Pending']" v-model="filter" />
           </div>
         </div>
@@ -132,6 +138,7 @@ import Filter from "./components/Filter.vue";
 import Screencap from "./components/Screencap.vue";
 import Loader from "./components/Loader.vue";
 import Spinner from "./components/icons/Spinner.vue";
+import RefreshIcon from "./components/icons/Refresh.vue";
 import ChevronIcon from "./components/icons/Chevron.vue";
 import LoginForm from "./components/LoginForm.vue";
 
@@ -149,6 +156,7 @@ export default {
     Loader,
     Spinner,
     ChevronIcon,
+    RefreshIcon,
     LoginForm,
   },
   data: () => ({
@@ -188,12 +196,18 @@ export default {
         });
 
         this.website = "";
+        this.filter = "Pending";
+        this.listScreenshots();
       } finally {
         this.loadings.screencap = false;
       }
     },
     async listScreenshots() {
       try {
+        if (this.loadings.list) {
+          return;
+        }
+
         this.loadings.list = true;
         const { data } = await axios.get("/screencaps", {
           params: {
@@ -208,6 +222,10 @@ export default {
     },
     async loadMore() {
       try {
+        if (this.loadings.listMore) {
+          return;
+        }
+
         this.loadings.listMore = true;
         const { data } = await axios.get("/screencaps", {
           params: {
@@ -237,15 +255,3 @@ export default {
   },
 };
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-</style>

@@ -8,6 +8,16 @@ module.exports = {
       colors: {
         primary: '#6366F1'
       },
+      animation: {
+        'spin-reverse': 'spin-reverse 1s linear infinite'
+      },
+      keyframes: {
+        'spin-reverse': {
+          from: {
+            transform: 'rotate(360deg)'
+          },
+        }
+      }
     },
   },
   plugins: [],
