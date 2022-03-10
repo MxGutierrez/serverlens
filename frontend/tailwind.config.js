@@ -10,7 +10,7 @@ module.exports = {
     },
     extend: {
       colors: {
-        primary: '#6366F1'
+        primary: 'var(--primary-color)'
       },
       animation: {
         'spin-reverse': 'spin-reverse 1s linear infinite'

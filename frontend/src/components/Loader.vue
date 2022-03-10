@@ -6,7 +6,7 @@
 
 <style scoped>
 .icon {
-  --color: #6366f1;
+  --color: var(--primary-color);
   position: relative;
   left: -9999px;
   width: 10px;

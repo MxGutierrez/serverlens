@@ -1,6 +1,6 @@
 <template>
   <button
-    class="flex items-center justify-center px-4 h-9 font-semibold leading-6 text-sm shadow rounded-md text-white bg-indigo-500 hover:bg-indigo-400 transition ease-in-out duration-150 text-center"
+    class="flex items-center justify-center px-4 h-9 font-semibold leading-6 text-sm shadow rounded-md text-white bg-primary transition ease-in-out duration-150 text-center"
     :class="{ 'cursor-not-allowed': disabled }"
   >
     <Spinner v-if="loading" class="text-white" />
