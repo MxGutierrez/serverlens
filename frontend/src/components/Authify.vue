@@ -49,6 +49,7 @@ export default {
         if (error.response.status === 401) {
           this.logout();
         }
+        throw error;
       }
     );
 

@@ -25,6 +25,13 @@
             <DownloadIcon class="h-6 w-6 text-gray-300 hover:text-primary" />
           </a>
 
+          <StarIcon
+            @click="toggleBookmark"
+            :filled="bookmarked"
+            class="h-6 w-6 text-gray-300 cursor-pointer"
+            :class="{ 'text-yellow-400': bookmarked }"
+          />
+
           <TrashIcon
             @click="handleDelete"
             class="text-gray-300 h-6 w-6 cursor-pointer"
@@ -69,6 +76,7 @@
 
 <script>
 import TrashIcon from "./icons/Trash.vue";
+import StarIcon from "./icons/Star.vue";
 import AlertIcon from "./icons/Alert.vue";
 import ExternalLinkIcon from "./icons/ExternalLink.vue";
 import DownloadIcon from "./icons/Download.vue";
@@ -83,6 +91,7 @@ export default {
     ExternalLinkIcon,
     DownloadIcon,
     AlertIcon,
+    StarIcon,
     Popper,
   },
   props: {
@@ -91,9 +100,13 @@ export default {
       required: true,
     },
   },
-  data: () => ({
-    deleting: false,
-  }),
+  data() {
+    return {
+      bookmarked: Boolean(this.screencap.BookmarkedAt),
+      deleting: false,
+      togglingBookmark: false,
+    };
+  },
   computed: {
     imageUrl() {
       return `${process.env.VUE_APP_SCREENCAP_URL}/${this.screencap.Path}`;
@@ -121,6 +134,26 @@ export default {
         this.$emit("deleted");
       } finally {
         this.deleting = false;
+      }
+    },
+    async toggleBookmark() {
+      if (this.togglingBookmark) {
+        return;
+      }
+
+      try {
+        this.togglingBookmark = true;
+
+        this.bookmarked = !this.bookmarked;
+
+        await axios({
+          method: this.bookmarked ? "POST" : "DELETE",
+          url: `/screencaps/${encodeURIComponent(this.screencap.SK)}/bookmark`,
+        });
+      } catch (error) {
+        this.bookmarked = !this.bookmarked;
+      } finally {
+        this.togglingBookmark = false;
       }
     },
   },

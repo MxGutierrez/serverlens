@@ -145,6 +145,50 @@ Resources:
             Path: /screencaps
             Method: POST
 
+  bookmarkScreencapFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/handlers/bookmark-screencap
+      Handler: index.handler
+      Description: Bookmarks screencap
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DBTable
+      Layers:
+        - !Ref ScreencapStatesLayer
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /screencaps/{SK}/bookmark
+            Method: POST
+
+  unbookmarkScreencapFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/handlers/unbookmark-screencap
+      Handler: index.handler
+      Description: Deletes screencap bookmark
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DBTable
+      Layers:
+        - !Ref ScreencapStatesLayer
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /screencaps/{SK}/bookmark
+            Method: DELETE
+
   processScreencapFunction:
     Type: AWS::Serverless::Function
     Properties:

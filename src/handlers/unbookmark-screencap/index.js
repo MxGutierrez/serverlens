@@ -1,22 +1,24 @@
 const dynamodb = require('aws-sdk/clients/dynamodb');
+const screencapStates = require('/opt/screencap-states.js')
 
 const tableName = process.env.TABLE_NAME;
 
-const docClient = new dynamodb.DocumentClient({
-    endpoint: process.env.AWS_SAM_LOCAL
-        ? 'http://dynamodb:8000'
-        : undefined
-});
+const docClient = new dynamodb.DocumentClient();
 
 exports.handler = async (event) => {
-    console.info('received:', event, event.pathParameters?.SK);
+    console.info('Event =>', event, event.pathParameters?.SK);
 
-    await docClient.delete({
+    if (!event.pathParameters.SK.includes(screencapStates.COMPLETED)) {
+        throw new Error("Can't unbookmark non completed screenshot");
+    }
+
+    await docClient.update({
         TableName: tableName,
         Key: {
             PK: `USER#${event.requestContext.authorizer.claims.sub}`,
             SK: decodeURIComponent(event.pathParameters.SK)
-        }
+        },
+        UpdateExpression: 'REMOVE BookmarkedAt',
     }).promise();
 
     return {
