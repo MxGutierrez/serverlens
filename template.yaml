@@ -241,6 +241,8 @@ Resources:
           AttributeType: S
         - AttributeName: SK
           AttributeType: S
+        - AttributeName: BookmarkedAt
+          AttributeType: S
       KeySchema:
         - AttributeName: PK
           KeyType: HASH
@@ -251,6 +253,18 @@ Resources:
         WriteCapacityUnits: 2
       StreamSpecification:
         StreamViewType: NEW_IMAGE
+      GlobalSecondaryIndexes:
+        - IndexName: Bookmarks
+          KeySchema:
+            - AttributeName: PK
+              KeyType: HASH
+            - AttributeName: BookmarkedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 2
+            WriteCapacityUnits: 2
 
   preSignupFunction:
     Type: AWS::Serverless::Function

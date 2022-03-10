@@ -11,17 +11,26 @@ const docClient = new dynamodb.DocumentClient({
 });
 
 exports.handler = async (event) => {
-    console.info('received:', event, event.queryStringParameters);
+    console.info('Event =>', event, event.queryStringParameters);
 
-    const requestingPending = event.queryStringParameters?.status === 'Pending';
+    const status = event.queryStringParameters?.status;
+
+    if (!['pending', 'completed', 'bookmarks'].includes(status)) {
+        throw Error(`Invalid status attribute: ${status}`)
+    }
+
+    const requestingPending = event.queryStringParameters?.status === 'pending';
 
     const data = await docClient.query({
         TableName: tableName,
-        KeyConditionExpression: 'PK = :id and begins_with(SK, :status)',
+        KeyConditionExpression: `PK = :id${status !== 'bookmarks' ? ' and begins_with(SK, :status)' : ''}`,
         ProjectionExpression: 'SK, #path, Website, FailureReason, BookmarkedAt',
+        IndexName: status === 'bookmarks' ? 'Bookmarks' : undefined,
         ExpressionAttributeValues: {
             ":id": `USER#${event.requestContext.authorizer.claims.sub}`,
-            ":status": `SCREENCAP#${requestingPending ? screencapStates.PENDING: screencapStates.COMPLETED}`
+            ...(status !== 'bookmarks' ? {
+                ":status": `SCREENCAP#${requestingPending ? screencapStates.PENDING: screencapStates.COMPLETED}`
+            }: {})
         },
         ExpressionAttributeNames: {
             "#path": "Path"

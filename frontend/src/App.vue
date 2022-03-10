@@ -57,9 +57,9 @@
 
         <template v-else>
           <div
-            class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between mb-5"
+            class="flex flex-col md:flex-row items-start md:items-center md:justify-between mb-5"
           >
-            <div class="w-full sm:w-1/2">
+            <div class="w-full md:w-1/2">
               <div class="space-x-3 flex-1 flex items-center w-full">
                 <Input
                   v-model="website"
@@ -67,7 +67,7 @@
                   @keyup.enter="screenshot"
                   placeholder="www.google.com"
                   :invalid="websiteError !== null"
-                  class="flex-1 sm:max-w-[380px]"
+                  class="flex-1 md:max-w-[380px]"
                 />
 
                 <Button
@@ -83,7 +83,7 @@
               }}</span>
             </div>
 
-            <div class="flex justify-end mt-5 sm:mt-0 items-center space-x-5">
+            <div class="flex justify-end mt-5 md:mt-0 items-center space-x-5">
               <button
                 @click="listScreenshots"
                 class="p-2 rounded-full bg-white border border-gray-200"
@@ -92,7 +92,14 @@
                   :class="{ 'animate-spin-reverse': loadings.list }"
                 />
               </button>
-              <Filter :items="['Completed', 'Pending']" v-model="filter" />
+              <Filter
+                :items="[
+                  { icon: 'star', id: 'bookmarks' },
+                  { label: 'Completed', id: 'completed' },
+                  { label: 'Pending', id: 'pending' },
+                ]"
+                v-model="filter"
+              />
             </div>
           </div>
 
@@ -116,6 +123,11 @@
                   :key="result.Path"
                   :screencap="result"
                   @deleted="results.Items.splice(index, 1)"
+                  @toggled-bookmark="
+                    $event === false && filter === 'bookmarks'
+                      ? results.Items.splice(index, 1)
+                      : ''
+                  "
                 />
               </div>
 
@@ -181,7 +193,7 @@ export default {
       list: false,
       listMore: false,
     },
-    filter: "Completed",
+    filter: "completed",
     dropdownOpened: false,
   }),
   methods: {
@@ -204,7 +216,7 @@ export default {
         });
 
         this.website = "";
-        this.filter = "Pending";
+        this.filter = "pending";
         this.listScreenshots();
       } finally {
         this.loadings.screencap = false;

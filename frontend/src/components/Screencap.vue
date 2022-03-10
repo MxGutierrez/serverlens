@@ -94,6 +94,7 @@ export default {
     StarIcon,
     Popper,
   },
+  emits: ["deleted", "toggled-bookmark"],
   props: {
     screencap: {
       type: Object,
@@ -150,6 +151,8 @@ export default {
           method: this.bookmarked ? "POST" : "DELETE",
           url: `/screencaps/${encodeURIComponent(this.screencap.SK)}/bookmark`,
         });
+
+        this.$emit("toggled-bookmark", this.bookmarked);
       } catch (error) {
         this.bookmarked = !this.bookmarked;
       } finally {
