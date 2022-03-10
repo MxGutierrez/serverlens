@@ -25,8 +25,8 @@ exports.handler = async (event) => {
         try {
             const website = record.dynamodb.NewImage?.Website?.S;
 
-            if (!website) {
-                throw new Error("Body doesn't have website attribute");
+            if (!website || !/^www\.[a-zA-Z-._]{2,256}\.[a-z]{2,6}$/.test(website)) {
+                throw new Error(`Invalid website attribute: ${website}`);
             }
 
             if (!browser) {
@@ -63,7 +63,7 @@ exports.handler = async (event) => {
                 Bucket: bucketName,
                 Key: filename,
                 Body: screencap,
-                ContentDisposition: `attachment; filename=${website}`
+                ContentDisposition: `attachment; filename=${website.split('.')[1]}.png`
             }).promise();
 
             console.info(`Screenshot saved as: ${filename}`);
