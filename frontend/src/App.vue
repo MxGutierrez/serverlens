@@ -8,12 +8,7 @@
   >
     <div class="px-4 border-b border-gray-200 shadow-sm">
       <div class="container flex items-center justify-between">
-        <h1
-          style="font-family: Redressed, sans-serif"
-          class="text-primary text-[60px]"
-        >
-          Serverlens
-        </h1>
+        <Logo />
 
         <div
           v-if="cognitoSession"
@@ -160,6 +155,7 @@ import RefreshIcon from "./components/icons/Refresh.vue";
 import ChevronIcon from "./components/icons/Chevron.vue";
 import UserIcon from "./components/icons/User.vue";
 import LoginForm from "./components/LoginForm.vue";
+import Logo from "./components/icons/Logo.vue";
 
 import axios from "axios";
 
@@ -178,6 +174,7 @@ export default {
     RefreshIcon,
     UserIcon,
     LoginForm,
+    Logo,
   },
   data: () => ({
     username: "",
