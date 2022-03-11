@@ -234,6 +234,7 @@ Resources:
 
   DBTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
     Properties:
       TableName: Serverlens
       AttributeDefinitions:
@@ -284,6 +285,7 @@ Resources:
 
   UserPool:
     Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
     Properties:
       UserPoolName: serverlens-user-pool
       Policies:
