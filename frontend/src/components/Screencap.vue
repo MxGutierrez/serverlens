@@ -28,7 +28,7 @@
           <StarIcon
             @click="toggleBookmark"
             :filled="bookmarked"
-            class="h-6 w-6 text-gray-300 cursor-pointer"
+            class="h-6 w-6 text-gray-300 cursor-pointer hover:text-yellow-400"
             :class="{ 'text-yellow-400': bookmarked }"
           />
 
