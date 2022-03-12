@@ -3,16 +3,16 @@
     class="block rounded-md overflow-hidden shadow group"
     :class="{ 'opacity-30': deleting }"
   >
-    <template v-if="screencap.SK.split('#')[1] === 'COMPLETED'">
+    <template v-if="screencap.status === 'COMPLETED'">
       <div class="w-full h-60 relative overflow-hidden">
         <img :src="imageUrl" class="w-full object-cover h-full object-top" />
 
         <a
-          :href="`http://${screencap.Website}`"
+          :href="`http://${screencap.website}`"
           target="__blank"
           class="absolute flex items-center bottom-0 sm:-bottom-[32px] left-0 sm:opacity-0 group-hover:opacity-100 group-hover:bottom-0 bg-primary text-white text-sm transition-all duration-200 ease-out py-1 px-3 rounded-t-lg ml-3"
         >
-          {{ screencap.Website }}
+          {{ screencap.website }}
           <ExternalLinkIcon class="h-3 w-3 ml-2" />
         </a>
       </div>
@@ -61,7 +61,7 @@
             </template>
           </Popper>
         </div>
-        <p class="text-sm truncate">{{ screencap.Website }}</p>
+        <p class="text-sm truncate">{{ screencap.website }}</p>
       </div>
 
       <TrashIcon
@@ -103,20 +103,20 @@ export default {
   },
   data() {
     return {
-      bookmarked: Boolean(this.screencap.BookmarkedAt),
+      bookmarked: this.screencap.bookmarked,
       deleting: false,
       togglingBookmark: false,
     };
   },
   computed: {
     imageUrl() {
-      return `${process.env.VUE_APP_SCREENCAP_URL}/${this.screencap.Path}`;
+      return `${process.env.VUE_APP_SCREENCAP_URL}/${this.screencap.path}`;
     },
     date() {
-      return dayjs(this.screencap.SK.split("#")[2]).fromNow();
+      return dayjs(this.screencap.date).fromNow();
     },
     hasFailed() {
-      return Boolean(this.screencap.FailureReason);
+      return Boolean(this.screencap.failureReason);
     },
   },
   methods: {
@@ -128,9 +128,7 @@ export default {
       try {
         this.deleting = true;
 
-        await axios.delete(
-          `/screencaps/${encodeURIComponent(this.screencap.SK)}`
-        );
+        await axios.delete(`/screencaps/${this.screencap.id}`);
 
         this.$emit("deleted");
       } finally {
@@ -149,7 +147,7 @@ export default {
 
         await axios({
           method: this.bookmarked ? "POST" : "DELETE",
-          url: `/screencaps/${encodeURIComponent(this.screencap.SK)}/bookmark`,
+          url: `/screencaps/${this.screencap.id}/bookmark`,
         });
 
         this.$emit("toggled-bookmark", this.bookmarked);

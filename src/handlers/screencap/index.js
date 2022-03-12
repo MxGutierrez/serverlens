@@ -22,14 +22,33 @@ exports.handler = async (event) => {
         throw new Error("Body doesn't have website attribute");
     }
 
-    await docClient.put({
-        TableName: tableName,
-        Item: {
-            PK: `USER#${event.requestContext.authorizer.claims.sub}`,
-            SK: `SCREENCAP#${screencapStates.PENDING}#${new Date().toISOString()}`,
-            Website: website
-        }
-    }).promise();
+    await docClient.transactWrite({
+        TransactItems: [{
+            Put: {
+                TableName: tableName,
+                Item: {
+                    PK: `USER#${event.requestContext.authorizer.claims.sub}`,
+                    SK: `SCREENCAP#${screencapStates.PENDING}#${new Date().toISOString()}`,
+                    Website: website
+                }
+            },
+        }, {
+            Update: {
+                TableName: tableName,
+                Key: {
+                    PK: `USER#${event.requestContext.authorizer.claims.sub}`,
+                    SK: `SCREENCAP#${screencapStates.PENDING}#METADATA`,
+                },
+                UpdateExpression: 'SET #count = #count + :incr',
+                ExpressionAttributeNames: {
+                    '#count': 'Count'
+                },
+                ExpressionAttributeValues: {
+                    ':incr': 1
+                }
+            }
+        }]
+    }).promise()
 
     return {
         statusCode: 202,

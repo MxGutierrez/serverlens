@@ -105,29 +105,35 @@
             />
 
             <div
-              v-else-if="results?.Items?.length === 0"
+              v-else-if="results?.items?.length === 0"
               class="flex justify-center items-center flex-1"
             >
               <p>No screenshots to show</p>
             </div>
 
             <template v-else>
+              <p class="mb-3 text-sm">
+                {{ results.count }} result{{
+                  results.count === 1 ? "" : "s"
+                }}
+                found
+              </p>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                 <Screencap
-                  v-for="(result, index) in results?.Items"
-                  :key="result.Path"
-                  :screencap="result"
-                  @deleted="results.Items.splice(index, 1)"
+                  v-for="(screencap, index) in results?.items"
+                  :key="screencap.id"
+                  :screencap="screencap"
+                  @deleted="results.items.splice(index, 1)"
                   @toggled-bookmark="
                     $event === false && filter === 'bookmarks'
-                      ? results.Items.splice(index, 1)
+                      ? results.items.splice(index, 1)
                       : ''
                   "
                 />
               </div>
 
               <div
-                v-if="results?.LastEvaluatedKey"
+                v-if="results?.cursor"
                 class="flex items-center justify-center mt-3 text-primary"
               >
                 <Spinner v-if="loadings.listMore" class="my-1" />
@@ -247,13 +253,13 @@ export default {
         const { data } = await axios.get("/screencaps", {
           params: {
             status: this.filter,
-            cursor: this.results.LastEvaluatedKey,
+            cursor: this.results.cursor,
           },
         });
 
         this.results = {
-          Items: [...this.results.Items, ...data.Items],
-          LastEvaluatedKey: data.LastEvaluatedKey,
+          items: [...this.results.items, ...data.items],
+          cursor: data.cursor,
         };
       } finally {
         this.loadings.listMore = false;

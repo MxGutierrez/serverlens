@@ -74,33 +74,60 @@ exports.handler = async (event) => {
             // that identifies the screencap state is in the SK and apparently PKs can't be updated
             // https://stackoverflow.com/questions/55474664/dynamoddb-how-to-update-sort-key
             await docClient.transactWrite({
-                TransactItems: [
-                    {
-                        Delete: {
-                            TableName: tableName,
-                            Key: {
-                                PK: record.dynamodb.Keys.PK.S,
-                                SK: record.dynamodb.Keys.SK.S
-                            },
-                            ConditionExpression: 'begins_with(SK, :pending)', // Only execute transaction when item is in pending state
-                            ExpressionAttributeValues: {
-                                ':pending': `SCREENCAP#${screencapStates.PENDING}#`
-                            }
-                        }
-                    },
-                    {
-                        Put: {
-                            TableName: tableName,
-                            Item: {
-                                PK: record.dynamodb.Keys.PK.S,
-                                SK: `SCREENCAP#${screencapStates.COMPLETED}#${new Date().toISOString()}`,
-                                RequestedDate: record.dynamodb.Keys.SK.S.split('#')[2],
-                                Path: filename,
-                                Website: website
-                            }
+                TransactItems: [{
+                    Delete: {
+                        TableName: tableName,
+                        Key: {
+                            PK: record.dynamodb.Keys.PK.S,
+                            SK: record.dynamodb.Keys.SK.S
+                        },
+                        ConditionExpression: 'begins_with(SK, :pending)', // Only execute transaction when item is in pending state
+                        ExpressionAttributeValues: {
+                            ':pending': `SCREENCAP#${screencapStates.PENDING}#`
                         }
                     }
-                ]
+                }, {
+                    Put: {
+                        TableName: tableName,
+                        Item: {
+                            PK: record.dynamodb.Keys.PK.S,
+                            SK: `SCREENCAP#${screencapStates.COMPLETED}#${new Date().toISOString()}`,
+                            RequestedDate: record.dynamodb.Keys.SK.S.split('#')[2],
+                            Path: filename,
+                            Website: website
+                        }
+                    }
+                }, {
+                    Update: {
+                        TableName: tableName,
+                        Key: {
+                            PK: record.dynamodb.Keys.PK.S,
+                            SK: `SCREENCAP#COMPLETED#METADATA`,
+                        },
+                        UpdateExpression: 'SET #count = #count + :incr',
+                        ExpressionAttributeNames: {
+                            '#count': 'Count'
+                        },
+                        ExpressionAttributeValues: {
+                            ':incr': 1
+                        }
+                    }
+                }, {
+                    Update: {
+                        TableName: tableName,
+                        Key: {
+                            PK: record.dynamodb.Keys.PK.S,
+                            SK: `SCREENCAP#PENDING#METADATA`,
+                        },
+                        UpdateExpression: 'SET #count = #count - :decr',
+                        ExpressionAttributeNames: {
+                            '#count': 'Count'
+                        },
+                        ExpressionAttributeValues: {
+                            ':decr': 1
+                        }
+                    }
+                }]
             }).promise();
 
             console.info('Saved screenshot item to db');

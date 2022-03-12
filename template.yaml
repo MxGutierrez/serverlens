@@ -61,6 +61,15 @@ Resources:
           ThrottlingRateLimit: 10
           ResourcePath: /screencaps
 
+  EntitiesLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: entities
+      Description: Entities
+      ContentUri: layers/entities
+      CompatibleRuntimes:
+        - nodejs14.x
+
   PuppeteerLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -69,7 +78,6 @@ Resources:
       ContentUri: layers/puppeteer
       CompatibleRuntimes:
         - nodejs14.x
-      RetentionPolicy: Delete
 
   ScreencapStatesLayer:
     Type: AWS::Serverless::LayerVersion
@@ -79,7 +87,6 @@ Resources:
       ContentUri: layers/screencap-states
       CompatibleRuntimes:
         - nodejs14.x
-      RetentionPolicy: Delete
 
   listScreencapsFunction:
     Type: AWS::Serverless::Function
@@ -95,6 +102,7 @@ Resources:
           TABLE_NAME: !Ref DBTable
       Layers:
         - !Ref ScreencapStatesLayer
+        - !Ref EntitiesLayer
       Events:
         Api:
           Type: Api
@@ -108,7 +116,7 @@ Resources:
     Properties:
       CodeUri: ./src/handlers/delete-screencap
       Handler: index.handler
-      Description: Deletes screencap with provided SK from authenticated user
+      Description: Deletes screencap with provided id from authenticated user
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DBTable
@@ -120,7 +128,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /screencaps/{SK}
+            Path: /screencaps/{id}
             Method: DELETE
 
   screencapFunction:
@@ -164,7 +172,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /screencaps/{SK}/bookmark
+            Path: /screencaps/{id}/bookmark
             Method: POST
 
   unbookmarkScreencapFunction:
@@ -186,7 +194,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /screencaps/{SK}/bookmark
+            Path: /screencaps/{id}/bookmark
             Method: DELETE
 
   processScreencapFunction:
@@ -227,7 +235,7 @@ Resources:
             MaximumBatchingWindowInSeconds: 5 # Maximum amount of time to gather records before invoking the function
             FilterCriteria:
               Filters:
-                - Pattern: '{ "eventName": [ "INSERT" ], "dynamodb": { "NewImage": { "SK": { "S": [ { "prefix": "SCREENCAP#PENDING#" } ] } } } }' # Only when a new PENDING state item is inserted
+                - Pattern: '{ "eventName": [ "INSERT" ], "dynamodb": { "NewImage": { "SK": { "S": [ { "prefix": "SCREENCAP#PENDING#" } ] }, "Website": { "S": [ {"exists": true } ] } } } }' # Only when a new PENDING state item is inserted
 
   ScreencapDLQ:
     Type: AWS::SQS::Queue
@@ -255,7 +263,7 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_IMAGE
       GlobalSecondaryIndexes:
-        - IndexName: Bookmarks
+        - IndexName: BookmarksGSI
           KeySchema:
             - AttributeName: PK
               KeyType: HASH
@@ -270,14 +278,38 @@ Resources:
   preSignupFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Description: Auto confirm signups
       CodeUri: ./pre-signup
       Handler: index.handler
-      Description: Auto confirm signups
 
-  AllowCognitoAccessLambda:
+  postConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Handles post confirmation event
+      CodeUri: ./post-confirmation
+      Handler: index.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DBTable
+      Layers:
+        - !Ref ScreencapStatesLayer
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DBTable
+
+  AllowCognitoAccessPreSignupLambda:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref preSignupFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt UserPool.Arn
+
+  AllowCognitoAccessPostConfirmationLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref postConfirmationFunction
       Action: lambda:InvokeFunction
       Principal: cognito-idp.amazonaws.com
       SourceAccount: !Ref AWS::AccountId
@@ -299,6 +331,7 @@ Resources:
           Required: false
       LambdaConfig:
         PreSignUp: !GetAtt preSignupFunction.Arn
+        PostConfirmation: !GetAtt postConfirmationFunction.Arn
 
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
