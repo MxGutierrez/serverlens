@@ -224,9 +224,6 @@ export default {
       }
     },
     async listScreenshots() {
-      if (this.loadings.list) {
-        return;
-      }
       try {
         this.loadings.list = true;
         const { data } = await axios.get("/screencaps", {
