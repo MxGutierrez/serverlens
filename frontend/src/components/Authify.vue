@@ -10,7 +10,7 @@
 </template>
 
 <script>
-// Auth logic from this component could be moved to api gateway endpoint
+// Auth logic from this component could be moved to api gateway endpoint maybe
 import {
   CognitoUserPool,
   CognitoUser,

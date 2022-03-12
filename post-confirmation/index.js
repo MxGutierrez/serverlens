@@ -6,7 +6,7 @@ const docClient = new dynamodb.DocumentClient();
 const screencapStates = require('/opt/screencap-states.js');
 
 exports.handler = async (event) => {
-    console.log('Event =>', event)
+    console.info('Event =>', event)
     if (event.triggerSource !== 'PostConfirmation_ConfirmSignUp') {
         return event;
     }
