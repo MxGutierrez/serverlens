@@ -5,7 +5,10 @@
   >
     <template v-if="screencap.status === 'COMPLETED'">
       <div class="w-full h-60 relative overflow-hidden">
-        <img :src="imageUrl" class="w-full object-cover h-full object-top" />
+        <img
+          :src="screencap.url"
+          class="w-full object-cover h-full object-top"
+        />
 
         <a
           :href="`http://${screencap.website}`"
@@ -21,7 +24,7 @@
         <p class="text-sm">{{ date }}</p>
 
         <div class="flex items-center space-x-3">
-          <a :href="imageUrl" download>
+          <a :href="screencap.url" download>
             <DownloadIcon class="h-6 w-6 text-gray-300 hover:text-primary" />
           </a>
 
@@ -109,9 +112,6 @@ export default {
     };
   },
   computed: {
-    imageUrl() {
-      return `${process.env.VUE_APP_SCREENCAP_URL}/${this.screencap.path}`;
-    },
     date() {
       return dayjs(this.screencap.date).fromNow();
     },

@@ -100,6 +100,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref DBTable
+          SCREENCAPS_BUCKET_PREFIX: !Sub "https://${ScreencapBucket.DomainName}"
       Layers:
         - !Ref ScreencapStatesLayer
         - !Ref EntitiesLayer
@@ -408,5 +409,3 @@ Outputs:
     Value: !Ref UserPool
   UserPoolClientID:
     Value: !Ref CognitoUserPoolClient
-  ScreencapBucketUrl:
-    Value: !Sub "https://${ScreencapBucket.DomainName}"
