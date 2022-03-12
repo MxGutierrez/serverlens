@@ -308,14 +308,14 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Description: Auto confirm signups
-      CodeUri: ./pre-signup
+      CodeUri: ./src/handlers/pre-signup
       Handler: index.handler
 
   postConfirmationFunction:
     Type: AWS::Serverless::Function
     Properties:
       Description: Handles post confirmation event
-      CodeUri: ./post-confirmation
+      CodeUri: ./src/handlers/post-confirmation
       Handler: index.handler
       Policies:
         - DynamoDBWritePolicy:
