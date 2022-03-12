@@ -7,6 +7,7 @@
       <div class="w-full h-60 relative overflow-hidden">
         <img
           :src="screencap.url"
+          loading="lazy"
           class="w-full object-cover h-full object-top"
         />
 
