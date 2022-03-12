@@ -5,11 +5,7 @@ const entities = require('/opt/entities.js')
 const tableName = process.env.TABLE_NAME;
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html
-const docClient = new dynamodb.DocumentClient({
-    endpoint: process.env.AWS_SAM_LOCAL
-        ? 'http://dynamodb:8000'
-        : undefined
-});
+const docClient = new dynamodb.DocumentClient();
 
 exports.handler = async (event) => {
     console.info('Event =>', event, event.queryStringParameters);

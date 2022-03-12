@@ -2,11 +2,7 @@ const dynamodb = require('aws-sdk/clients/dynamodb');
 
 const tableName = process.env.TABLE_NAME;
 
-const docClient = new dynamodb.DocumentClient({
-    endpoint: process.env.AWS_SAM_LOCAL
-        ? 'http://dynamodb:8000'
-        : undefined
-});
+const docClient = new dynamodb.DocumentClient();
 
 exports.handler = async (event) => {
     console.info('received:', event, event.pathParameters?.id);

@@ -11,11 +11,7 @@ const s3 = new AWS.S3();
 const bucketName = process.env.BUCKET_NAME;
 const tableName = process.env.TABLE_NAME;
 
-const docClient = new dynamodb.DocumentClient({
-    endpoint: process.env.AWS_SAM_LOCAL
-        ? 'http://dynamodb:8000'
-        : undefined
-});
+const docClient = new dynamodb.DocumentClient();
 
 exports.handler = async (event) => {
     console.info('event: ', event);
