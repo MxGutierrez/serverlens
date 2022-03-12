@@ -113,9 +113,7 @@
 
             <template v-else>
               <p class="mb-3 text-sm">
-                {{ results.count }} result{{
-                  results.count === 1 ? "" : "s"
-                }}
+                {{ results.count }} result{{ results.count === 1 ? "" : "s" }}
                 found
               </p>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
@@ -226,11 +224,10 @@ export default {
       }
     },
     async listScreenshots() {
+      if (this.loadings.list) {
+        return;
+      }
       try {
-        if (this.loadings.list) {
-          return;
-        }
-
         this.loadings.list = true;
         const { data } = await axios.get("/screencaps", {
           params: {
@@ -258,6 +255,7 @@ export default {
         });
 
         this.results = {
+          ...this.results,
           items: [...this.results.items, ...data.items],
           cursor: data.cursor,
         };

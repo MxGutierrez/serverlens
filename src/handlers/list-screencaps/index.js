@@ -17,6 +17,7 @@ exports.handler = async (event) => {
     }
 
     const requestingPending = event.queryStringParameters?.status === 'pending';
+    const hasCursor = Boolean(event.queryStringParameters?.cursor);
 
     const data = await docClient.query({
         TableName: tableName,
@@ -29,16 +30,19 @@ exports.handler = async (event) => {
             }: {})
         },
         ScanIndexForward: false,
-        ExclusiveStartKey: event.queryStringParameters?.cursor ? JSON.parse(Buffer.from(event.queryStringParameters.cursor, 'base64').toString()) : undefined,
+        ExclusiveStartKey: hasCursor ? JSON.parse(Buffer.from(event.queryStringParameters.cursor, 'base64').toString()) : undefined,
         
         Limit: requestingPending ? 13: 7 // item count + 1 (metadata record)
     }).promise();
 
     console.info('Data =>', data);
 
+    // Count is first item only when not using cursor because metadata item is the first item and with cursor it will be skipped
     const response = {
-        items: data.Items.slice(1).map(item => new entities.Screencap(item)),
-        count: data.Items[0].Count,
+        items: [
+            ...(hasCursor ? data.Items : data.Items.slice(1))
+        ].map(item => new entities.Screencap(item)),
+        count: hasCursor ? undefined : data.Items[0].Count,
         cursor: data.LastEvaluatedKey ? Buffer.from(JSON.stringify(data.LastEvaluatedKey)).toString('base64') : undefined
     }
 
