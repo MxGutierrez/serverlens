@@ -1,6 +1,3 @@
-dev:
-	docker-compose up -d
-
 local-deploy:
 	sam build && sam deploy --stack-name serverlens --parameter-overrides Env=local --no-confirm-changeset
 
