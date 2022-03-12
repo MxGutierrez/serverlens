@@ -108,7 +108,7 @@
               v-else-if="results?.items?.length === 0"
               class="flex justify-center items-center flex-1"
             >
-              <p>No screenshots to show</p>
+              <p>No screenshots here</p>
             </div>
 
             <template v-else>
