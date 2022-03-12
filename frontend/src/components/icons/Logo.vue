@@ -36,6 +36,28 @@
       />
       <rect x="760" y="110" width="14" height="30" fill="currentColor" />
     </svg>
-    <h1 class="text-[1.6rem] sm:text-[2.1rem]">Serverlens</h1>
+    <div>
+      <h1 class="text-[1.6rem] sm:text-[2.1rem] leading-[2.95rem] -mt-[8px]">
+        Serverlens
+      </h1>
+      <a
+        href="https://github.com/MxGutierrez/serverlens"
+        target="__blank"
+        class="flex items-center space-x-2 text-black hover:text-gray-600"
+      >
+        <GithubLogo class="h-4 w-4" />
+        <span class="text-xs">MxGutierrez/serverlens</span>
+      </a>
+    </div>
   </div>
 </template>
+
+<script>
+import GithubLogo from "./Github";
+
+export default {
+  components: {
+    GithubLogo,
+  },
+};
+</script>

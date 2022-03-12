@@ -6,7 +6,7 @@
     @success="handleSuccess"
     @update:cognito-session="updateCognitoSession"
   >
-    <div class="px-4 border-b border-gray-200 shadow-sm">
+    <div class="px-4 border-b border-gray-200 shadow-sm py-1">
       <div class="container flex items-center justify-between">
         <Logo />
 
@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <div class="flex-1 flex flex-col py-4 bg-[#f9fafb]">
+    <div class="flex-1 flex flex-col pt-6 pb-12 bg-[#f9fafb]">
       <div
         class="container flex-1 flex flex-col"
         :class="{ 'justify-center': cognitoSession === null }"
@@ -135,7 +135,7 @@
                 class="flex items-center justify-center mt-3 text-primary"
               >
                 <Spinner v-if="loadings.listMore" class="my-1" />
-                <button v-else @click="loadMore" class="px-3 py-1">
+                <button v-else @click="loadMore" class="px-10 py-3">
                   Load more
                 </button>
               </div>
