@@ -89,7 +89,7 @@
               </button>
               <Filter
                 :items="[
-                  { icon: 'star', id: 'bookmarks' },
+                  { label: 'Bookmarks', id: 'bookmarks' },
                   { label: 'Completed', id: 'completed' },
                   { label: 'Pending', id: 'pending' },
                 ]"

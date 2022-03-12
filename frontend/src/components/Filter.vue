@@ -9,11 +9,12 @@
       class="rounded-md focus:ring-primary h-9 px-3"
       :class="{ 'text-white bg-primary font-semibold': modelValue === item.id }"
     >
-      <Component
-        v-if="item.icon"
-        :is="iconToComponent[item.icon]"
-        class="w-6 h-6"
+      <StarIcon
+        v-if="item.label === 'Bookmarks'"
+        class="text-yellow-400 w-6 h-6"
+        :filled="true"
       />
+
       <template v-else>
         {{ item.label }}
       </template>
@@ -22,11 +23,8 @@
 </template>
 
 <script>
-const iconToComponent = {
-  star: "StarIcon",
-};
-
 import StarIcon from "./icons/Star";
+
 export default {
   components: {
     StarIcon,
@@ -42,8 +40,5 @@ export default {
       required: true,
     },
   },
-  data: () => ({
-    iconToComponent,
-  }),
 };
 </script>
