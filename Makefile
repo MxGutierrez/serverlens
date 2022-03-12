@@ -2,7 +2,7 @@ local-deploy:
 	sam build && sam deploy --stack-name serverlens --parameter-overrides Env=local --no-confirm-changeset
 
 deploy:
-	sam build && sam deploy --stack-name serverlens --no-confirm-changeset
+	sam build && sam deploy --stack-name serverlens --parameter-overrides Env=prod --no-confirm-changeset
 
 deploy-frontend:
 	(cd frontend && npm run build) # make build package without moving into frontend directory
