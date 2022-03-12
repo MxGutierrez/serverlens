@@ -238,6 +238,34 @@ Resources:
               Filters:
                 - Pattern: '{ "eventName": [ "INSERT" ], "dynamodb": { "NewImage": { "SK": { "S": [ { "prefix": "SCREENCAP#PENDING#" } ] }, "Website": { "S": [ {"exists": true } ] } } } }' # Only when a new PENDING state item is inserted
 
+  postDeleteScreencapFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/handlers/post-delete
+      Handler: index.handler
+      Description: Deletes screencap image from bucket
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ScreencapBucket
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref ScreencapBucket
+      Events:
+        ScreencapItemDeleted:
+          Type: DynamoDB
+          Properties:
+            BatchSize: 10
+            StartingPosition: TRIM_HORIZON
+            Stream: !GetAtt DBTable.StreamArn
+            BisectBatchOnFunctionError: true
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+            MaximumRetryAttempts: 1
+            MaximumBatchingWindowInSeconds: 5
+            FilterCriteria:
+              Filters:
+                - Pattern: '{ "eventName": [ "REMOVE" ], "dynamodb": { "OldImage": { "SK": { "S": [ { "prefix": "SCREENCAP#COMPLETED#" } ] } } } }' # Only when a completed screencap was deleted
+
   ScreencapDLQ:
     Type: AWS::SQS::Queue
 
@@ -262,7 +290,7 @@ Resources:
         ReadCapacityUnits: 2
         WriteCapacityUnits: 2
       StreamSpecification:
-        StreamViewType: NEW_IMAGE
+        StreamViewType: NEW_AND_OLD_IMAGES
       GlobalSecondaryIndexes:
         - IndexName: BookmarksGSI
           KeySchema:
