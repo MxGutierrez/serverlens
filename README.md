@@ -12,4 +12,8 @@
 
 # Serverlens
 
+A simple serveless application that takes screenshots of any website. You are welcome to give it a try [here](http://serverlens-frontend.s3-website-us-east-1.amazonaws.com/).
+
+## Technical details
+
 Coming soon
