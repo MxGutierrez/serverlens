@@ -6,7 +6,7 @@ deploy:
 
 deploy-frontend:
 	(cd frontend && npm run build) # make build package without moving into frontend directory
-	aws s3 sync frontend/dist/ s3://serverlens-frontend --delete
+	aws s3 sync frontend/dist/ s3://serverlens-frontend --storage-class ONEZONE_IA --delete
 
 sync:
 	sam sync --stack-name serverlens --code --resource-id $(r)
