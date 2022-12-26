@@ -13,6 +13,12 @@ Parameters:
       - local
     Default: prod
     Description: Enter prod|local. Default is prod
+  DomainName:
+    Type: String
+    Description: Domain name for the app
+  AcmCertificateArn:
+    Type: String
+    Description: ACM certificate ARN for the domain
 
 Conditions:
   LocalDeploy: !Equals [!Ref Env, local]
@@ -44,7 +50,7 @@ Resources:
           !If [
             LocalDeploy,
             "'http://localhost:8080'",
-            !Sub "'${AppBucket.WebsiteURL}'",
+            !Sub "'https://${DomainName}'",
           ]
       GatewayResponses:
         DEFAULT_4XX:
@@ -373,8 +379,71 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: serverlens-frontend
-      WebsiteConfiguration:
-        IndexDocument: index.html
+  
+  FrontendCloudfrontRewriteRequestFunction:
+    Type: AWS::CloudFront::Function
+    Properties: 
+      Name: serverlens-cloudfront-rewrite-request
+      AutoPublish: true
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var uri = request.uri
+          if (uri.includes('.') && !uri.endsWith('.html')) {
+              return request;
+          }
+          request.uri = '/index.html';
+          return request;
+        }
+      FunctionConfig: 
+        Comment: !Sub "Rewrites sub-directory path with trailing /index.html"
+        Runtime: cloudfront-js-1.0
+      
+  FrontendCloudfront:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+        Comment: Serverlens frontend
+        Origins:
+          - DomainName: !Sub ${AppBucket}.s3.${AWS::Region}.amazonaws.com
+            Id: AppBucket
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${FrontendCloudfrontOAI}
+        DefaultCacheBehavior:
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed-CachingDisabled
+          TargetOriginId: AppBucket
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt FrontendCloudfrontRewriteRequestFunction.FunctionMetadata.FunctionARN
+        Aliases:
+          - !Ref DomainName
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AcmCertificateArn
+          SslSupportMethod: sni-only
+
+  FrontendCloudfrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "Access to ${AppBucket}"
+  
+  AppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AppBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - s3:GetObject
+            Effect: Allow
+            Resource: !Sub ${AppBucket.Arn}/*
+            Principal:
+              AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${OriginAccessIdentity}'
 
   ScreencapBucket:
     Type: AWS::S3::Bucket
@@ -429,7 +498,7 @@ Resources:
 
 Outputs:
   FrontendUrl:
-    Value: !GetAtt AppBucket.WebsiteURL
+    Value: !Sub https://${DomainName}
   BackendEndpoint:
     Description: "API Gateway endpoint URL for Prod stage"
     Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod/"
