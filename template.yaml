@@ -379,10 +379,10 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: serverlens-frontend
-  
+
   FrontendCloudfrontRewriteRequestFunction:
     Type: AWS::CloudFront::Function
-    Properties: 
+    Properties:
       Name: serverlens-cloudfront-rewrite-request
       AutoPublish: true
       FunctionCode: |
@@ -395,10 +395,10 @@ Resources:
           request.uri = '/index.html';
           return request;
         }
-      FunctionConfig: 
+      FunctionConfig:
         Comment: !Sub "Rewrites sub-directory path with trailing /index.html"
         Runtime: cloudfront-js-1.0
-      
+
   FrontendCloudfront:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -430,7 +430,7 @@ Resources:
     Properties:
       CloudFrontOriginAccessIdentityConfig:
         Comment: !Sub "Access to ${AppBucket}"
-  
+
   AppBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -443,7 +443,7 @@ Resources:
             Effect: Allow
             Resource: !Sub ${AppBucket.Arn}/*
             Principal:
-              AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${OriginAccessIdentity}'
+              AWS: !Sub arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${FrontendCloudfrontOAI}
 
   ScreencapBucket:
     Type: AWS::S3::Bucket
@@ -479,22 +479,6 @@ Resources:
             Effect: Allow
             Resource: !Sub "${ScreencapBucket.Arn}/*"
             Principal: "*"
-
-  AppBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref AppBucket
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          Action:
-            - "s3:GetObject"
-          Effect: Allow
-          Principal: "*"
-          Resource: !Join
-            - ""
-            - - !GetAtt AppBucket.Arn
-              - /*
 
 Outputs:
   FrontendUrl:
