@@ -36,7 +36,7 @@
       />
       <rect x="760" y="110" width="14" height="30" fill="currentColor" />
     </svg>
-    <div>
+    <div class="my-2">
       <h1 class="text-[1.6rem] sm:text-[2.1rem] leading-[2.95rem] -mt-[8px]">
         Serverlens
       </h1>
@@ -48,16 +48,24 @@
         <GithubLogo class="h-4 w-4" />
         <span class="text-xs">MxGutierrez/serverlens</span>
       </a>
+      <a
+        href="https://mxgutierrez.com"
+        target="_blank"
+        class="text-xs flex items-center space-x-2 hover:opacity-75 mt-1"
+        ><LinkIcon class="h-4 w-4" /><span>My personal website</span></a
+      >
     </div>
   </div>
 </template>
 
 <script>
 import GithubLogo from "./Github";
+import LinkIcon from "./Link.vue";
 
 export default {
   components: {
     GithubLogo,
+    LinkIcon,
   },
 };
 </script>
