@@ -210,6 +210,7 @@ Resources:
       CodeUri: ./src/handlers/process-screencap
       Handler: index.handler
       Description: Takes a screencap of a given url
+      Timeout: 15
       Policies:
         - S3WritePolicy:
             BucketName: !Ref ScreencapBucket
